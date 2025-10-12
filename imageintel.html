@@ -1,237 +1,36 @@
-<!-- =========================
-PART 1/2 — /imageintel.html  (v0.9 r10)
-Place THIS FILE and imageintel.r10.js in the SAME FOLDER.
-Open /imageintel/ (folder index) or /imageintel.html
-========================= -->
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="color-scheme" content="dark"/>
-  <title>ImageIntel Pro Lab — BlackSite HUD (v0.9 r10)</title>
-  <style>
-    :root{--bg:#070a0f;--grid:rgba(255,255,255,.04);--panel:#0d121a;--muted:#94a3b8;--text:#e6f1ff;--chip:#101826}
-    *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:radial-gradient(1200px 1200px at 10% -10%,#0c1420,var(--bg)) fixed;color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-    body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px;mask-image:radial-gradient(1000px 700px at 10% 0%,#000 80%,transparent)}
-    .app{position:relative;z-index:1;height:100%;display:grid;gap:12px;padding:12px;grid-template-columns:1.25fr .75fr;grid-template-rows:62% 38%;grid-template-areas:"stage side" "kpi side"}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid rgba(255,255,255,.08);border-radius:18px;backdrop-filter:blur(6px)}
-    .title{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--muted)}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.col{display:grid;gap:8px}
-    .chip{background:var(--chip);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 10px;font-size:12px;color:#b6cdfb}
-    .ver{background:#102132;border:1px solid rgba(62,248,255,.4);color:#cfffff}
-    .btn{background:linear-gradient(180deg,rgba(62,248,255,.15),rgba(62,248,255,.06));border:1px solid rgba(62,248,255,.45);color:#cfffff;padding:8px 12px;border-radius:10px;cursor:pointer}
-    .btn.secondary{border-color:rgba(102,255,153,.45);background:linear-gradient(180deg,rgba(102,255,153,.16),rgba(102,255,153,.06));color:#dbffe8}
-    .btn.warn{border-color:rgba(255,209,102,.45);background:linear-gradient(180deg,rgba(255,209,102,.16),rgba(255,209,102,.06));color:#fff3cf}
-    .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,.25)}
-    .toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-    .toggle input{appearance:none;width:30px;height:18px;border-radius:999px;background:#15202f;border:1px solid rgba(255,255,255,.2);position:relative}
-    .toggle input:checked{background:#0e2c2c;border-color:rgba(62,248,255,.5)}
-    .toggle input::after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;background:#9aa7bd;border-radius:50%;transition:160ms}
-    .toggle input:checked::after{left:calc(100% - 15px);background:#72ffd5}
-    #stage{grid-area:stage;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
-    .stage-head{padding:10px;display:flex;align-items:center;justify-content:space-between}
-    .canvas-wrap{position:relative;overflow:hidden;background:#0b0f14;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);height:100%;min-height:340px}
-    #inputImage{max-width:100%;max-height:100%;display:block;object-fit:contain}
-    #overlay{position:absolute;left:0;top:0;image-rendering:pixelated}
-    .drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(255,255,255,.15);border-radius:12px;color:#9fb5d8;pointer-events:none;opacity:.18}
-    .loaded{border-color:rgba(102,255,153,.45)!important;color:#d7ffe8!important;opacity:.22}
-    #kpis{grid-area:kpi;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;overflow:auto}
-    .kpi{background:#0d121a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;min-height:120px;display:grid;grid-template-rows:auto 1fr}
-    .list{display:grid;gap:6px;font-size:12px}.pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between}
-    #side{grid-area:side;display:grid;grid-template-rows:auto 1fr auto}
-    #terminal{height:160px;overflow:auto;background:#05070b;border-top:1px solid rgba(255,255,255,.08);padding:8px;font:12px ui-monospace,Menlo,Consolas;color:#b0c3e6}
-    .log.ok{color:#5cff7a}.log.err{color:#ff4d6d}
-    .statusbar{display:flex;gap:6px;flex-wrap:wrap}.statusbar .chip.ok{border-color:rgba(102,255,153,.45);color:#d5ffe5}.statusbar .chip.err{border-color:rgba(255,77,109,.45);color:#ffd0da}
-    textarea{width:100%;resize:vertical;background:#05070b;color:#e6f1ff;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px}
-    pre#diagDump{max-height:160px;overflow:auto;background:#03050a;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;color:#cfe1ff}
-    details{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:8px;background:#0c1118}
-    details+details{margin-top:8px} details>summary{cursor:pointer;color:#c5d7f2}
-    .header-actions{display:flex;gap:8px;align-items:center}
-    .errbanner{position:fixed;left:12px;right:12px;bottom:12px;background:#2a0f12;border:1px solid #ff4d6d;color:#ffdbe2;padding:10px;border-radius:12px;z-index:9999;display:none}
-  </style>
-</head>
-<body>
-  <div class="app" data-ver="v0.9-r10">
-    <section id="stage" class="card">
-      <div class="stage-head">
-        <div class="row">
-          <span class="title">BLACKSITE HUD</span>
-          <span class="chip ver" id="bootChip">v0.9 (r10) — waiting for JS…</span>
-          <span class="chip">Objects</span><span class="chip">Pose</span><span class="chip">Face</span><span class="chip">Hands</span><span class="chip">Body Mesh</span><span class="chip">Silhouette</span><span class="chip">Seg</span><span class="chip">Edges</span>
-          <span class="chip" id="fpsChip">FPS — n/a</span>
-        </div>
-        <div class="header-actions">
-          <input id="file" type="file" accept="image/*" style="display:none"/>
-          <label class="btn" for="file">Upload Image</label>
-          <button id="runBtn" class="btn secondary" disabled>Run Analysis</button>
-          <label class="toggle"><input id="compactUI" type="checkbox" checked><span>Compact UI</span></label>
-        </div>
-      </div>
-      <div class="canvas-wrap" id="canvasWrap">
-        <img id="inputImage" alt="input"/>
-        <canvas id="overlay"></canvas>
-        <div class="drop" id="dropHint">Drop / Paste an image here</div>
-      </div>
-      <div class="panel-body" style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px;">
-        <div class="statusbar">
-          <span class="chip" id="st-wasm">WASM — …</span>
-          <span class="chip" id="st-obj">Object — …</span>
-          <span class="chip" id="st-pose">Pose — …</span>
-          <span class="chip" id="st-face">Face — …</span>
-          <span class="chip" id="st-hands">Hands — …</span>
-          <span class="chip" id="st-seg">Seg — …</span>
-          <span class="chip" id="st-image">Image — …</span>
-          <span class="chip" id="st-run">Detectors — …</span>
-        </div>
-        <div class="row">
-          <button id="exportPng" class="btn">PNG</button>
-          <button id="exportMasked" class="btn">Masked PNG</button>
-          <button id="exportJson" class="btn">Report .json</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="kpis" class="card">
-      <div class="kpi"><h4 class="title">Subject</h4><div class="list" id="subjectList"></div></div>
-      <div class="kpi"><h4 class="title">Objects</h4><div class="list" id="objectList"></div></div>
-      <div class="kpi"><h4 class="title">Pose</h4><div class="list" id="poseList"></div></div>
-      <div class="kpi"><h4 class="title">Color / Lighting</h4><div class="list" id="colorList"></div></div>
-    </section>
-
-    <aside id="side" class="card">
-      <details open>
-        <summary>Overlays & Controls</summary>
-        <div class="row">
-          <label class="toggle"><input id="tgObjects" type="checkbox" checked><span>Objects</span></label>
-          <label class="toggle"><input id="tgPose" type="checkbox" checked><span>Pose</span></label>
-          <label class="toggle"><input id="tgFace" type="checkbox" checked><span>Face</span></label>
-          <label class="toggle"><input id="tgHands" type="checkbox" checked><span>Hands</span></label>
-          <label class="toggle"><input id="tgBody" type="checkbox" checked><span>Body Mesh</span></label>
-          <label class="toggle"><input id="tgSil" type="checkbox" checked><span>Silhouette</span></label>
-          <label class="toggle"><input id="tgSeg" type="checkbox" checked><span>Seg</span></label>
-          <label class="toggle"><input id="tgEdges" type="checkbox" checked><span>Edges</span></label>
-          <label class="toggle" title="Force CPU delegates"><input id="safeMode" type="checkbox" checked><span>Safe Mode</span></label>
-        </div>
-      </details>
-
-      <details open>
-        <summary>Prompt Engine</summary>
-        <div class="row">
-          <div class="col" style="min-width:180px;">
-            <label>Prompt Mode</label>
-            <select id="mode">
-              <option value="sfw">SFW</option>
-              <option value="nsfw_safe">NSFW-safe (redacted)</option>
-              <option value="edgy">Edgy</option>
-              <option value="poetic">Poetic</option>
-              <option value="numeric">Numeric</option>
-              <option value="json">Raw JSON</option>
-            </select>
-          </div>
-          <div class="col" style="min-width:180px;">
-            <label>Model Style</label>
-            <select id="modelStyle">
-              <option value="generic">Generic</option>
-              <option value="sdxl">SDXL-like</option>
-              <option value="jugger">JuggernautXL-like</option>
-            </select>
-          </div>
-          <div class="col" style="min-width:180px;">
-            <label>Style Pack</label>
-            <select id="stylePack">
-              <option value="neutral">Neutral</option>
-              <option value="tealorange">Cinematic Teal/Orange</option>
-              <option value="pastel">Soft Pastel</option>
-              <option value="mono">High-Contrast Mono</option>
-              <option value="vintage">Warm Vintage</option>
-            </select>
-          </div>
-          <div class="col" style="min-width:200px;"><label>Detail</label><input id="detail" type="range" min="0" max="100" step="1" value="85"/></div>
-        </div>
-        <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
-          <span class="title">Prompt Output</span><span class="chip" id="promptChars">0 chars</span>
-        </div>
-        <textarea id="promptOut" rows="6" placeholder="Run analysis to generate a prompt…"></textarea>
-
-        <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
-          <span class="title">Compare Prompts — A / B / C</span>
-          <div class="row"><button id="genABC" class="btn">Generate A/B/C</button><button id="copyABC" class="btn">Copy All</button></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          <div class="col"><label class="title">A</label><textarea id="pA" rows="6"></textarea></div>
-          <div class="col"><label class="title">B</label><textarea id="pB" rows="6"></textarea></div>
-          <div class="col"><label class="title">C</label><textarea id="pC" rows="6"></textarea></div>
-        </div>
-
-        <div class="row">
-          <button id="copyPrompt" class="btn">Copy Prompt</button>
-          <button id="downloadPrompt" class="btn">Download .txt</button>
-        </div>
-      </details>
-
-      <details open>
-        <summary>Diagnostics</summary>
-        <pre id="diagDump" class="slab" aria-label="Diagnostics Output"></pre>
-        <div class="row"><span class="title">NSFW Gate</span><span class="chip" id="nsfwGate">Disabled</span></div>
-        <div id="terminal"></div>
-        <div class="row">
-          <button id="overlayTest" class="btn ghost">Overlay Test</button>
-          <button id="matrixTest" class="btn">Matrix Test</button>
-          <button id="reinit" class="btn warn">Re-Init Models</button>
-          <button id="selfTest" class="btn">Self-Test</button>
-          <button id="copyDiag" class="btn">Copy Diag</button>
-          <button id="copyBundle" class="btn">Copy Bug Bundle</button>
-        </div>
-      </details>
-    </aside>
-  </div>
-
-  <div id="errbanner" class="errbanner"></div>
-  <noscript>
-    <div style="margin:12px;padding:12px;border:1px solid #ff4d6d;border-radius:12px;background:#2a0f12;color:#ffdbe2">
-      JavaScript is blocked by your browser or a Content-Security-Policy. Enable JS or relax CSP to use ImageIntel.
-    </div>
-  </noscript>
-
-  <!-- IMPORTANT: relative path (same folder). If your page is /imageintel/, this resolves to /imageintel/imageintel.r10.js -->
-  <script defer src="imageintel.r10.js?v=1002"></script>
-</body>
-</html>
-
-<!-- =========================
-PART 2/2 — /imageintel.r10.js  (v0.9 r10)
-========================= -->
-/* ImageIntel Pro Lab — v0.9 (r10) — classic script (no inline modules) */
+// =========================
+// PART 2/2 — /imageintel/imageintel.r11.js  (v0.9 r11)
+// Classic script, no inline modules. Boots UI first; loads models later.
+// =========================
 (function(){
   'use strict';
 
-  // Boot stamp → proves JS executed
+  // Version stamp → proves JS executed
   var bootChip=document.getElementById('bootChip');
-  if(bootChip){ bootChip.textContent='v0.9 (r10) — JS OK ⬤'; }
+  if(bootChip){ bootChip.textContent='v0.9 (r11) — JS OK ⬤'; }
 
-  // DOM refs
+  // DOM
   var $=function(id){return document.getElementById(id)};
   var img=$('inputImage'), wrap=$('canvasWrap'), canvas=$('overlay'), ctx=canvas.getContext('2d',{willReadFrequently:true});
   var fileInput=$('file'), runBtn=$('runBtn'), diag=$('diagDump'), logEl=$('terminal'), fpsChip=$('fpsChip');
   var status={wasm:$('st-wasm'),obj:$('st-obj'),pose:$('st-pose'),face:$('st-face'),hands:$('st-hands'),seg:$('st-seg'),image:$('st-image'),run:$('st-run')};
   var STATE={modelsReady:false,imageReady:false};
-  window.__BUNDLE={errors:[],matrix:{},version:'v0.9-r10'};
+  window.__BUNDLE={errors:[],matrix:{},version:'v0.9-r11'};
 
-  // Error banner
+  // Errors → banner + log
   var banner=document.getElementById('errbanner');
   function showBanner(msg){ if(!banner) return; banner.textContent=msg; banner.style.display='block'; setTimeout(function(){banner.style.display='none'},8000); }
   window.addEventListener('error',function(e){ var m='JS: '+e.message; window.__BUNDLE.errors.push(m); showBanner(m); log(m,false); });
   window.addEventListener('unhandledrejection',function(e){ var m='Promise: '+(e.reason&&e.reason.message?e.reason.message:e.reason); window.__BUNDLE.errors.push(m); showBanner(m); log(m,false); });
 
-  // Log helper
+  // Logging
   function log(m,ok){ var d=document.createElement('div'); d.textContent=m; d.className='log'+(ok===true?' ok':ok===false?' err':''); logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
 
-  // Resize to fit
+  // Fit overlay to image box
   function resize(){ if(!img.naturalWidth) return; var r=wrap.getBoundingClientRect(); var ia=img.naturalWidth/img.naturalHeight, ra=r.width/r.height; var w,h; if(ia>ra){w=r.width;h=w/ia;} else {h=r.height;w=h*ia;} canvas.width=w|0; canvas.height=h|0; img.style.width=w+'px'; img.style.height=h+'px'; }
   window.addEventListener('resize',resize); img.addEventListener('load',resize);
 
-  // Simple edges overlay (always works)
+  // Always-works edges
   function drawEdges(alpha){ var w=canvas.width,h=canvas.height; if(!w||!h) return;
     var oc=document.createElement('canvas'); oc.width=w; oc.height=h; var ox=oc.getContext('2d',{willReadFrequently:true});
     ox.drawImage(img,0,0,w,h); var src=ox.getImageData(0,0,w,h); var out=ox.createImageData(w,h);
@@ -243,7 +42,7 @@ PART 2/2 — /imageintel.r10.js  (v0.9 r10)
     ox.putImageData(out,0,0); ctx.save(); ctx.globalAlpha=alpha||0.45; ctx.drawImage(oc,0,0); ctx.restore();
   }
 
-  // Fallback prompt (even without models)
+  // Fallback prompt
   function analyzeColor(el){ var c=document.createElement('canvas'),cx=c.getContext('2d'); var w=el.naturalWidth,h=el.naturalHeight; if(!w||!h) return null;
     var s=Math.min(1,180/Math.max(w,h)); c.width=Math.max(1,(w*s)|0); c.height=Math.max(1,(h*s)|0);
     cx.drawImage(el,0,0,c.width,c.height); var d=cx.getImageData(0,0,c.width,c.height).data; var lum=0,n=0;
@@ -254,7 +53,7 @@ PART 2/2 — /imageintel.r10.js  (v0.9 r10)
     $('promptOut').value=out; $('promptChars').textContent=out.length+' chars';
   }
 
-  // Image load + bindings
+  // Image pipeline
   function onImageLoaded(){ resize(); status.image.textContent='Image — OK'; status.image.classList.add('ok'); status.image.classList.remove('err');
     STATE.imageReady=true; log('Image loaded ✓',true); ctx.clearRect(0,0,canvas.width,canvas.height); drawEdges(0.45); fallbackPrompt(); document.getElementById('runBtn').disabled=false; }
   function isImg(f){ return f && f.type && /^image\//i.test(f.type); }
@@ -306,7 +105,7 @@ PART 2/2 — /imageintel.r10.js  (v0.9 r10)
   }
   initModels();
 
-  // Painters
+  // Overlay painters
   function drawPose(res,a){ if(!res||!res.landmarks||!res.landmarks.length) return; var l=res.landmarks[0]; ctx.save(); ctx.globalAlpha=a||0.9; ctx.lineWidth=3; ctx.strokeStyle='rgba(102,255,153,.9)';
     var E=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]];
     for(var i=0;i<E.length;i++){ var p=l[E[i][0]], q=l[E[i][1]]; if(!p||!q) continue; ctx.beginPath(); ctx.moveTo(p.x*canvas.width,p.y*canvas.height); ctx.lineTo(q.x*canvas.width,q.y*canvas.height); ctx.stroke(); }
@@ -325,7 +124,7 @@ PART 2/2 — /imageintel.r10.js  (v0.9 r10)
     ctx.restore();
   }
 
-  // Run pipeline
+  // Run
   async function runAll(){ log('Run start ▶',true); if(!STATE.imageReady){ log('No image loaded yet.',false); return; }
     ctx.clearRect(0,0,canvas.width,canvas.height);
     if(!STATE.modelsReady){ log('Models not ready; fallback edges only.',false); drawEdges(0.45); fallbackPrompt(); return; }
