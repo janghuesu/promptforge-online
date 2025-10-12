@@ -1,142 +1,302 @@
-// =========================
-// PART 2/2 — /imageintel/imageintel.r11.js  (v0.9 r11)
-// Classic script, no inline modules. Boots UI first; loads models later.
-// =========================
+<!-- =========================================================
+VARIANT A (ROOT FILES)  — use this if your page is /imageintel.html
+Deploy BOTH files at site root:
+  /imageintel.html
+  /imageintel.r12.js
+Open: https://promptforge.online/imageintel.html
+========================================================= -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="dark"/>
+  <title>ImageIntel Pro Lab — BlackSite HUD (v0.9 r12 • root)</title>
+  <style>
+    :root{--bg:#070a0f;--grid:rgba(255,255,255,.04);--panel:#0d121a;--muted:#94a3b8;--text:#e6f1ff;--chip:#101826}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#0c1420;color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    .app{height:100%;display:grid;gap:12px;padding:12px;grid-template-columns:1.25fr .75fr;grid-template-rows:62% 38%;grid-template-areas:"stage side" "kpi side"}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid rgba(255,255,255,.08);border-radius:18px}
+    .title{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 10px;font-size:12px;color:#b6cdfb}
+    .btn{background:linear-gradient(180deg,rgba(62,248,255,.15),rgba(62,248,255,.06));border:1px solid rgba(62,248,255,.45);color:#cfffff;padding:8px 12px;border-radius:10px;cursor:pointer}
+    #stage{grid-area:stage;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+    .stage-head{padding:10px;display:flex;align-items:center;justify-content:space-between}
+    .canvas-wrap{position:relative;overflow:hidden;background:#0b0f14;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);height:100%;min-height:340px}
+    #inputImage{max-width:100%;max-height:100%;display:block;object-fit:contain}
+    #overlay{position:absolute;left:0;top:0}
+    #kpis{grid-area:kpi;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;overflow:auto}
+    .kpi{background:#0d121a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;min-height:120px;display:grid;grid-template-rows:auto 1fr}
+    .list{display:grid;gap:6px;font-size:12px}.pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between}
+    #side{grid-area:side;display:grid;grid-template-rows:auto 1fr auto}
+    #terminal{height:160px;overflow:auto;background:#05070b;border-top:1px solid rgba(255,255,255,.08);padding:8px;font:12px ui-monospace,Menlo,Consolas;color:#b0c3e6}
+    .log.ok{color:#5cff7a}.log.err{color:#ff4d6d}
+    .statusbar{display:flex;gap:6px;flex-wrap:wrap}.statusbar .chip.ok{border-color:rgba(102,255,153,.45);color:#d5ffe5}.statusbar .chip.err{border-color:rgba(255,77,109,.45);color:#ffd0da}
+    textarea{width:100%;resize:vertical;background:#05070b;color:#e6f1ff;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px}
+    .errbanner{position:fixed;left:12px;right:12px;bottom:12px;background:#2a0f12;border:1px solid #ff4d6d;color:#ffdbe2;padding:10px;border-radius:12px;z-index:9999;display:none}
+    .debugnote{padding:8px 12px;background:#172030;border-left:3px solid #59f;border-radius:8px;margin:8px;color:#cfe1ff}
+  </style>
+</head>
+<body>
+  <div class="debugnote">
+    HTML LOADED • URL: <code id="dbgUrl"></code> • Build: <strong>v0.9 (r12-root)</strong>.
+    JS will flip the chip below to “JS OK ⬤”. If it stays “waiting for JS…”, the file <code>/imageintel.r12.js</code> didn’t load.
+  </div>
+  <div class="app" data-ver="v0.9-r12-root">
+    <section id="stage" class="card">
+      <div class="stage-head">
+        <div class="row">
+          <span class="title">BLACKSITE HUD</span>
+          <span class="chip" id="bootChip">v0.9 (r12) — waiting for JS…</span>
+          <span class="chip" id="fpsChip">FPS — n/a</span>
+        </div>
+        <div class="row">
+          <input id="file" type="file" accept="image/*" style="display:none"/>
+          <label class="btn" for="file">Upload Image</label>
+          <button id="runBtn" class="btn" disabled>Run Analysis</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <img id="inputImage" alt="input"/>
+        <canvas id="overlay"></canvas>
+        <div class="drop" id="dropHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#89a">Drop / Paste an image here</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;">
+        <div class="statusbar">
+          <span class="chip" id="st-wasm">WASM — …</span>
+          <span class="chip" id="st-obj">Object — …</span>
+          <span class="chip" id="st-pose">Pose — …</span>
+          <span class="chip" id="st-face">Face — …</span>
+          <span class="chip" id="st-image">Image — …</span>
+          <span class="chip" id="st-run">Detectors — …</span>
+        </div>
+        <div class="row">
+          <button id="overlayTest" class="btn">Overlay Test</button>
+          <button id="selfTest" class="btn">Self-Test</button>
+          <button id="copyDiag" class="btn">Copy Diag</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="kpis" class="card">
+      <div class="kpi"><h4 class="title">Subject</h4><div class="list" id="subjectList"></div></div>
+      <div class="kpi"><h4 class="title">Objects</h4><div class="list" id="objectList"></div></div>
+      <div class="kpi"><h4 class="title">Pose</h4><div class="list" id="poseList"></div></div>
+      <div class="kpi"><h4 class="title">Color / Lighting</h4><div class="list" id="colorList"></div></div>
+    </section>
+
+    <aside id="side" class="card">
+      <h4 class="title" style="padding:10px 10px 0">Prompt Output</h4>
+      <textarea id="promptOut" rows="6" placeholder="Run analysis to generate a prompt…"></textarea>
+      <div id="terminal"></div>
+    </aside>
+  </div>
+
+  <div id="errbanner" class="errbanner"></div>
+  <noscript><div class="debugnote">JavaScript is blocked by your browser or a CSP. Enable JS.</div></noscript>
+
+  <script>document.getElementById('dbgUrl').textContent=location.href;</script>
+  <!-- ROOT path (absolute) -->
+  <script defer src="/imageintel.r12.js?v=1201"></script>
+</body>
+</html>
+
+<!-- =========================================================
+VARIANT B (FOLDER) — use this if your page is /imageintel/ (index.html)
+Deploy BOTH files in the /imageintel/ folder:
+  /imageintel/index.html
+  /imageintel/app.r12.js
+Open: https://promptforge.online/imageintel/
+========================================================= -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="dark"/>
+  <title>ImageIntel Pro Lab — BlackSite HUD (v0.9 r12 • folder)</title>
+  <style>
+    :root{--bg:#070a0f;--grid:rgba(255,255,255,.04);--panel:#0d121a;--muted:#94a3b8;--text:#e6f1ff;--chip:#101826}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#0c1420;color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    .app{height:100%;display:grid;gap:12px;padding:12px;grid-template-columns:1.25fr .75fr;grid-template-rows:62% 38%;grid-template-areas:"stage side" "kpi side"}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid rgba(255,255,255,.08);border-radius:18px}
+    .title{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:#94a3b8}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .chip{background:#101826;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 10px;font-size:12px;color:#b6cdfb}
+    .btn{background:linear-gradient(180deg,rgba(62,248,255,.15),rgba(62,248,255,.06));border:1px solid rgba(62,248,255,.45);color:#cfffff;padding:8px 12px;border-radius:10px;cursor:pointer}
+    #stage{grid-area:stage;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+    .stage-head{padding:10px;display:flex;align-items:center;justify-content:space-between}
+    .canvas-wrap{position:relative;overflow:hidden;background:#0b0f14;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);height:100%;min-height:340px}
+    #inputImage2{max-width:100%;max-height:100%;display:block;object-fit:contain}
+    #overlay2{position:absolute;left:0;top:0}
+    #kpis2{grid-area:kpi;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;overflow:auto}
+    .kpi{background:#0d121a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;min-height:120px;display:grid;grid-template-rows:auto 1fr}
+    #terminal2{height:160px;overflow:auto;background:#05070b;border-top:1px solid rgba(255,255,255,.08);padding:8px;font:12px ui-monospace,Menlo,Consolas;color:#b0c3e6}
+  </style>
+</head>
+<body>
+  <div class="debugnote" style="padding:8px 12px;background:#172030;border-left:3px solid #59f;border-radius:8px;margin:8px;color:#cfe1ff">
+    HTML LOADED • URL: <code id="dbgUrl2"></code> • Build: <strong>v0.9 (r12-folder)</strong>.
+  </div>
+  <div class="app" data-ver="v0.9-r12-folder">
+    <section id="stage" class="card">
+      <div class="stage-head">
+        <div class="row">
+          <span class="title">BLACKSITE HUD</span>
+          <span class="chip" id="bootChip2">v0.9 (r12) — waiting for JS…</span>
+          <span class="chip" id="fpsChip2">FPS — n/a</span>
+        </div>
+        <div class="row">
+          <input id="file2" type="file" accept="image/*" style="display:none"/>
+          <label class="btn" for="file2">Upload Image</label>
+          <button id="runBtn2" class="btn" disabled>Run Analysis</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap2">
+        <img id="inputImage2" alt="input"/>
+        <canvas id="overlay2"></canvas>
+        <div class="drop" id="dropHint2" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#89a">Drop / Paste an image here</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;">
+        <div class="statusbar">
+          <span class="chip" id="st-wasm2">WASM — …</span>
+          <span class="chip" id="st-obj2">Object — …</span>
+          <span class="chip" id="st-pose2">Pose — …</span>
+          <span class="chip" id="st-face2">Face — …</span>
+          <span class="chip" id="st-image2">Image — …</span>
+          <span class="chip" id="st-run2">Detectors — …</span>
+        </div>
+        <div class="row">
+          <button id="overlayTest2" class="btn">Overlay Test</button>
+          <button id="selfTest2" class="btn">Self-Test</button>
+          <button id="copyDiag2" class="btn">Copy Diag</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="kpis2" class="card">
+      <div class="kpi"><h4 class="title">Subject</h4><div class="list" id="subjectList2"></div></div>
+      <div class="kpi"><h4 class="title">Objects</h4><div class="list" id="objectList2"></div></div>
+      <div class="kpi"><h4 class="title">Pose</h4><div class="list" id="poseList2"></div></div>
+      <div class="kpi"><h4 class="title">Color / Lighting</h4><div class="list" id="colorList2"></div></div>
+    </section>
+
+    <aside id="side" class="card">
+      <h4 class="title" style="padding:10px 10px 0">Prompt Output</h4>
+      <textarea id="promptOut2" rows="6" placeholder="Run analysis to generate a prompt…"></textarea>
+      <div id="terminal2"></div>
+    </aside>
+  </div>
+
+  <script>document.getElementById('dbgUrl2').textContent=location.href;</script>
+  <!-- FOLDER-relative path -->
+  <script defer src="./app.r12.js?v=1201"></script>
+</body>
+</html>
+
+<!-- =========================================================
+SHARED SCRIPT (logic is identical for both). COPY TWICE:
+  For VARIANT A save as: /imageintel.r12.js
+  For VARIANT B save as: /imageintel/app.r12.js
+========================================================= -->
 (function(){
   'use strict';
 
-  // Version stamp → proves JS executed
-  var bootChip=document.getElementById('bootChip');
-  if(bootChip){ bootChip.textContent='v0.9 (r11) — JS OK ⬤'; }
+  // pick the right set of IDs (root vs folder variant)
+  var root = !!document.getElementById('bootChip'); // root variant?
+  var $ = (id) => document.getElementById(id);
+  var ids = root ? {
+    boot:'bootChip', fps:'fpsChip', file:'file', run:'runBtn',
+    img:'inputImage', wrap:'canvasWrap', canvas:'overlay',
+    st:{wasm:'st-wasm', obj:'st-obj', pose:'st-pose', face:'st-face', image:'st-image', run:'st-run'},
+    overlayTest:'overlayTest', selfTest:'selfTest', copyDiag:'copyDiag',
+    subject:'subjectList', object:'objectList', pose:'poseList', color:'colorList', prompt:'promptOut', term:'terminal'
+  } : {
+    boot:'bootChip2', fps:'fpsChip2', file:'file2', run:'runBtn2',
+    img:'inputImage2', wrap:'canvasWrap2', canvas:'overlay2',
+    st:{wasm:'st-wasm2', obj:'st-obj2', pose:'st-pose2', face:'st-face2', image:'st-image2', run:'st-run2'},
+    overlayTest:'overlayTest2', selfTest:'selfTest2', copyDiag:'copyDiag2',
+    subject:'subjectList2', object:'objectList2', pose:'poseList2', color:'colorList2', prompt:'promptOut2', term:'terminal2'
+  };
 
-  // DOM
-  var $=function(id){return document.getElementById(id)};
-  var img=$('inputImage'), wrap=$('canvasWrap'), canvas=$('overlay'), ctx=canvas.getContext('2d',{willReadFrequently:true});
-  var fileInput=$('file'), runBtn=$('runBtn'), diag=$('diagDump'), logEl=$('terminal'), fpsChip=$('fpsChip');
-  var status={wasm:$('st-wasm'),obj:$('st-obj'),pose:$('st-pose'),face:$('st-face'),hands:$('st-hands'),seg:$('st-seg'),image:$('st-image'),run:$('st-run')};
+  // Boot stamp
+  var bootChip = $(ids.boot);
+  if (bootChip) bootChip.textContent = 'v0.9 (r12) — JS OK ⬤';
+
+  // DOM refs
+  var img=$(ids.img), wrap=$(ids.wrap), canvas=$(ids.canvas), ctx=canvas.getContext('2d',{willReadFrequently:true});
+  var fileInput=$(ids.file), runBtn=$(ids.run), fpsChip=$(ids.fps), term=$(ids.term);
+  var st = { wasm:$(ids.st.wasm), obj:$(ids.st.obj), pose:$(ids.st.pose), face:$(ids.st.face), image:$(ids.st.image), run:$(ids.st.run) };
   var STATE={modelsReady:false,imageReady:false};
-  window.__BUNDLE={errors:[],matrix:{},version:'v0.9-r11'};
 
-  // Errors → banner + log
-  var banner=document.getElementById('errbanner');
-  function showBanner(msg){ if(!banner) return; banner.textContent=msg; banner.style.display='block'; setTimeout(function(){banner.style.display='none'},8000); }
-  window.addEventListener('error',function(e){ var m='JS: '+e.message; window.__BUNDLE.errors.push(m); showBanner(m); log(m,false); });
-  window.addEventListener('unhandledrejection',function(e){ var m='Promise: '+(e.reason&&e.reason.message?e.reason.message:e.reason); window.__BUNDLE.errors.push(m); showBanner(m); log(m,false); });
+  // logging
+  function log(m,ok){ var d=document.createElement('div'); d.textContent=m; d.className='log'+(ok===true?' ok':ok===false?' err':''); term.appendChild(d); term.scrollTop=term.scrollHeight; }
 
-  // Logging
-  function log(m,ok){ var d=document.createElement('div'); d.textContent=m; d.className='log'+(ok===true?' ok':ok===false?' err':''); logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; }
+  // errors
+  var banner=document.createElement('div'); banner.className='errbanner'; document.body.appendChild(banner);
+  function showBanner(msg){ banner.textContent=msg; banner.style.display='block'; setTimeout(()=>banner.style.display='none',7000); }
+  window.addEventListener('error',e=>{ log('JS: '+e.message,false); showBanner('JS: '+e.message); });
+  window.addEventListener('unhandledrejection',e=>{ const m='Promise: '+(e.reason&&e.reason.message?e.reason.message:e.reason); log(m,false); showBanner(m); });
 
-  // Fit overlay to image box
-  function resize(){ if(!img.naturalWidth) return; var r=wrap.getBoundingClientRect(); var ia=img.naturalWidth/img.naturalHeight, ra=r.width/r.height; var w,h; if(ia>ra){w=r.width;h=w/ia;} else {h=r.height;w=h*ia;} canvas.width=w|0; canvas.height=h|0; img.style.width=w+'px'; img.style.height=h+'px'; }
+  // fit
+  function resize(){ if(!img.naturalWidth) return; const r=wrap.getBoundingClientRect(); const ia=img.naturalWidth/img.naturalHeight, ra=r.width/r.height; let w,h; if(ia>ra){w=r.width;h=w/ia;} else {h=r.height;w=h*ia;} canvas.width=w|0; canvas.height=h|0; img.style.width=w+'px'; img.style.height=h+'px'; }
   window.addEventListener('resize',resize); img.addEventListener('load',resize);
 
-  // Always-works edges
-  function drawEdges(alpha){ var w=canvas.width,h=canvas.height; if(!w||!h) return;
-    var oc=document.createElement('canvas'); oc.width=w; oc.height=h; var ox=oc.getContext('2d',{willReadFrequently:true});
-    ox.drawImage(img,0,0,w,h); var src=ox.getImageData(0,0,w,h); var out=ox.createImageData(w,h);
-    var Gx=[-1,0,1,-2,0,2,-1,0,1], Gy=[-1,-2,-1,0,0,0,1,2,1];
-    for(var y=1;y<h-1;y++){ for(var x=1;x<w-1;x++){ var sx=0,sy=0,pi=0;
-      for(var ky=-1;ky<=1;ky++){ for(var kx=-1;kx<=1;kx++){ var ix=((y+ky)*w+(x+kx))*4;
-        var lum=0.2126*src.data[ix]+0.7152*src.data[ix+1]+0.0722*src.data[ix+2]; sx+=lum*Gx[pi]; sy+=lum*Gy[pi]; pi++; } }
-      var m=Math.min(255,Math.hypot(sx,sy)); var o=(y*w+x)*4; out.data[o]=out.data[o+1]=out.data[o+2]=m; out.data[o+3]=m>40?255:0; } }
-    ox.putImageData(out,0,0); ctx.save(); ctx.globalAlpha=alpha||0.45; ctx.drawImage(oc,0,0); ctx.restore();
-  }
+  // edges
+  function drawEdges(alpha){ const w=canvas.width,h=canvas.height; if(!w||!h) return; const oc=document.createElement('canvas'); oc.width=w; oc.height=h; const ox=oc.getContext('2d',{willReadFrequently:true}); ox.drawImage(img,0,0,w,h); const src=ox.getImageData(0,0,w,h); const out=ox.createImageData(w,h); const Gx=[-1,0,1,-2,0,2,-1,0,1], Gy=[-1,-2,-1,0,0,0,1,2,1]; for(let y=1;y<h-1;y++){ for(let x=1;x<w-1;x++){ let sx=0,sy=0,pi=0; for(let ky=-1;ky<=1;ky++){ for(let kx=-1;kx<=1;kx++){ const ix=((y+ky)*w+(x+kx))*4; const lum=0.2126*src.data[ix]+0.7152*src.data[ix+1]+0.0722*src.data[ix+2]; sx+=lum*Gx[pi]; sy+=lum*Gy[pi]; pi++; }} const m=Math.min(255,Math.hypot(sx,sy)); const o=(y*w+x)*4; out.data[o]=out.data[o+1]=out.data[o+2]=m; out.data[o+3]=m>40?255:0; }} ox.putImageData(out,0,0); ctx.save(); ctx.globalAlpha=alpha||0.45; ctx.drawImage(oc,0,0); ctx.restore(); }
 
-  // Fallback prompt
-  function analyzeColor(el){ var c=document.createElement('canvas'),cx=c.getContext('2d'); var w=el.naturalWidth,h=el.naturalHeight; if(!w||!h) return null;
-    var s=Math.min(1,180/Math.max(w,h)); c.width=Math.max(1,(w*s)|0); c.height=Math.max(1,(h*s)|0);
-    cx.drawImage(el,0,0,c.width,c.height); var d=cx.getImageData(0,0,c.width,c.height).data; var lum=0,n=0;
-    for(var i=0;i<d.length;i+=24){ lum+=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255; n++; }
-    var L=lum/(n||1); return {avg_brightness:+L.toFixed(3), lighting:(L>0.7?'bright':(L<0.35?'dim':'moderate'))};
-  }
-  function fallbackPrompt(){ var c=analyzeColor(img); var pos='photorealistic, subject centered'+(c?(', '+c.lighting+' lighting'):''); var out=pos+'\nNEGATIVE: lowres, blur, watermark';
-    $('promptOut').value=out; $('promptChars').textContent=out.length+' chars';
-  }
+  // color + fallback prompt
+  function analyzeColor(el){ const c=document.createElement('canvas'),cx=c.getContext('2d'); const w=el.naturalWidth,h=el.naturalHeight; if(!w||!h) return null; const s=Math.min(1,180/Math.max(w,h)); c.width=Math.max(1,(w*s)|0); c.height=Math.max(1,(h*s)|0); cx.drawImage(el,0,0,c.width,c.height); const d=cx.getImageData(0,0,c.width,c.height).data; let lum=0,n=0; for(let i=0;i<d.length;i+=24){ lum+=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255; n++; } const L=lum/(n||1); return {avg_brightness:+L.toFixed(3), lighting:(L>0.7?'bright':(L<0.35?'dim':'moderate'))}; }
+  function fallbackPrompt(){ const c=analyzeColor(img); const pos='photorealistic, subject centered'+(c?(', '+c.lighting+' lighting'):''); const out=pos+'\nNEGATIVE: lowres, blur, watermark'; $(ids.prompt).value=out; }
 
-  // Image pipeline
-  function onImageLoaded(){ resize(); status.image.textContent='Image — OK'; status.image.classList.add('ok'); status.image.classList.remove('err');
-    STATE.imageReady=true; log('Image loaded ✓',true); ctx.clearRect(0,0,canvas.width,canvas.height); drawEdges(0.45); fallbackPrompt(); document.getElementById('runBtn').disabled=false; }
+  // image pipeline
+  function onImageLoaded(){ resize(); st.image.textContent='Image — OK'; st.image.classList.add('ok'); STATE.imageReady=true; log('Image loaded ✓',true); ctx.clearRect(0,0,canvas.width,canvas.height); drawEdges(0.45); fallbackPrompt(); runBtn.disabled=false; }
   function isImg(f){ return f && f.type && /^image\//i.test(f.type); }
-  function readAsDataURL(file){ return new Promise(function(res,rej){ var fr=new FileReader(); fr.onerror=function(){rej(fr.error)}; fr.onload=function(){res(fr.result)}; fr.readAsDataURL(file); }); }
-  function fileToDataUrlViaBitmap(file){ return createImageBitmap(file).then(function(bmp){ var c=document.createElement('canvas'); c.width=bmp.width; c.height=bmp.height; c.getContext('2d').drawImage(bmp,0,0); return c.toDataURL('image/png'); }).catch(function(){ return null; }); }
-  async function loadFile(file){ if(!file){ log('No file picked',false); return; } if(!isImg(file)){ log('Unsupported file: '+(file.type||'unknown'),false); status.image.textContent='Image — ERR'; status.image.classList.add('err'); status.image.classList.remove('ok'); return; }
-    var url=null; try{ url=await fileToDataUrlViaBitmap(file); if(!url) url=await readAsDataURL(file); }catch(e){ log('Decode fallback failed: '+e.message,false); }
-    if(!url){ log('Could not decode image',false); status.image.textContent='Image — ERR'; status.image.classList.add('err'); status.image.classList.remove('ok'); return; }
-    img.decoding='async'; img.loading='eager'; img.onload=onImageLoaded; img.onerror=function(){ log('Image error: cannot decode/display',false); status.image.textContent='Image — ERR'; status.image.classList.add('err'); status.image.classList.remove('ok'); STATE.imageReady=false; }; img.src=url;
-  }
-  document.getElementById('canvasWrap').addEventListener('dragover',function(e){ e.preventDefault(); document.getElementById('dropHint').style.opacity='.38'; });
-  document.getElementById('canvasWrap').addEventListener('dragleave',function(e){ e.preventDefault(); document.getElementById('dropHint').style.opacity='.18'; });
-  document.getElementById('canvasWrap').addEventListener('drop',function(e){ e.preventDefault(); document.getElementById('dropHint').style.opacity='.18'; var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) loadFile(f); });
-  window.addEventListener('paste',function(e){ var items=(e.clipboardData&&e.clipboardData.items)||[]; for(var i=0;i<items.length;i++){ if(items[i].type.indexOf('image/')===0){ var f=items[i].getAsFile(); if(f){ log('Pasted image…'); loadFile(f); } break; } }});
-  fileInput.addEventListener('change',function(e){ var f=e.target.files&&e.target.files[0]; if(f){ log('Loading local image…'); loadFile(f); } });
+  function readAsDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=()=>rej(fr.error); fr.onload=()=>res(fr.result); fr.readAsDataURL(file); }); }
+  function fileToDataUrlViaBitmap(file){ return createImageBitmap(file).then(bmp=>{ const c=document.createElement('canvas'); c.width=bmp.width; c.height=bmp.height; c.getContext('2d').drawImage(bmp,0,0); return c.toDataURL('image/png'); }).catch(()=>null); }
+  async function loadFile(file){ if(!file){ log('No file picked',false); return; } if(!isImg(file)){ log('Unsupported file: '+(file.type||'unknown'),false); st.image.textContent='Image — ERR'; st.image.classList.add('err'); return; } let url=null; try{ url=await fileToDataUrlViaBitmap(file); if(!url) url=await readAsDataURL(file); }catch(e){ log('Decode fallback failed: '+e.message,false); } if(!url){ log('Could not decode image',false); st.image.textContent='Image — ERR'; st.image.classList.add('err'); return; } img.decoding='async'; img.loading='eager'; img.onload=onImageLoaded; img.onerror=()=>{ log('Image error: cannot decode/display',false); st.image.textContent='Image — ERR'; st.image.classList.add('err'); STATE.imageReady=false; }; img.src=url; }
 
-  // Quick checks
-  document.getElementById('overlayTest').addEventListener('click',function(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.strokeStyle='#9ad1ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(canvas.width,canvas.height); ctx.moveTo(canvas.width,0); ctx.lineTo(0,canvas.height); ctx.stroke(); ctx.font='16px ui-sans-serif'; ctx.fillStyle='#9ad1ff'; ctx.fillText('OVERLAY OK',12,22); log('Overlay test drawn ✓',true); });
-  document.getElementById('selfTest').addEventListener('click',function(){ var t=[ 'Version: '+(window.__BUNDLE.version||'?'), 'Href: '+location.href, 'UA: '+navigator.userAgent, 'Lang: '+navigator.language, 'Platform: '+navigator.platform, 'Cores: '+(navigator.hardwareConcurrency||'?')+' / Mem: '+(navigator.deviceMemory||'?')+'GB' ].join('\n'); diag.textContent=t; log('Self-test captured environment ✓',true); });
-  document.getElementById('copyDiag').addEventListener('click',async function(){ try{ await navigator.clipboard.writeText(diag.textContent||''); log('Diagnostics copied ✓',true);}catch(e){ log('Copy failed',false);} });
-  (function tick(){ var fpsv=(1000/16.7).toFixed(1); fpsChip.textContent='FPS — '+fpsv; requestAnimationFrame(tick); })();
+  $(ids.wrap).addEventListener('dragover',e=>{ e.preventDefault(); });
+  $(ids.wrap).addEventListener('drop',e=>{ e.preventDefault(); const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) loadFile(f); });
+  window.addEventListener('paste',e=>{ const items=(e.clipboardData&&e.clipboardData.items)||[]; for(let i=0;i<items.length;i++){ if(items[i].type.indexOf('image/')===0){ const f=items[i].getAsFile(); if(f) loadFile(f); break; } }});
+  fileInput.addEventListener('change',e=>{ const f=e.target.files&&e.target.files[0]; if(f) loadFile(f); });
+
+  // quick tools
+  $(ids.overlayTest).addEventListener('click',()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.strokeStyle='#9ad1ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(canvas.width,canvas.height); ctx.moveTo(canvas.width,0); ctx.lineTo(0,canvas.height); ctx.stroke(); ctx.font='16px ui-sans-serif'; ctx.fillStyle='#9ad1ff'; ctx.fillText('OVERLAY OK',12,22); log('Overlay test drawn ✓',true); });
+  $(ids.selfTest).addEventListener('click',()=>{ log('Self-test: '+navigator.userAgent,true); });
+  $(ids.copyDiag).addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(term.textContent||''); log('Diagnostics copied ✓',true);}catch(e){ log('Copy failed',false);} });
+  (function tick(){ const fpsv=(1000/16.7).toFixed(1); $(ids.fps).textContent='FPS — '+fpsv; requestAnimationFrame(tick); })();
   log('BOOT: UI wired ✓',true);
 
-  // Late loader: Mediapipe (Objects/Pose/Face)
-  var vision=null, FilesetResolver=null, ObjectDetector=null, PoseLandmarker=null, FaceLandmarker=null;
-  var detector=null, poser=null, facer=null;
-  async function loadVision(){ var urls=[
+  // models (late)
+  let vision=null, FilesetResolver=null, ObjectDetector=null, PoseLandmarker=null, FaceLandmarker=null;
+  let detector=null, poser=null, facer=null;
+  async function loadVision(){ const urls=[
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs',
       'https://unpkg.com/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs',
       'https://ga.jspm.io/npm:@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs'
-    ], lastErr='';
-    for(var i=0;i<urls.length;i++){ try{ vision=await import(urls[i]); break; } catch(e){ lastErr=e&&e.message?e.message:String(e); log('Import fail: '+urls[i]+' → '+lastErr,false); } }
-    if(!vision){ status.wasm.textContent='WASM — ERR'; status.wasm.classList.add('err'); log('tasks-vision NOT loaded. Fallback mode only.',false); return false; }
+    ]; for(const u of urls){ try{ vision=await import(u); break; }catch(e){ log('Import fail: '+u+' → '+(e.message||e),false);} }
+    if(!vision){ st.wasm.textContent='WASM — ERR'; st.wasm.classList.add('err'); log('tasks-vision NOT loaded. Fallback only.',false); return false; }
     FilesetResolver=vision.FilesetResolver; ObjectDetector=vision.ObjectDetector; PoseLandmarker=vision.PoseLandmarker; FaceLandmarker=vision.FaceLandmarker;
-    status.wasm.textContent='WASM — OK'; status.wasm.classList.add('ok'); log('WASM/module ready',true); return true;
+    st.wasm.textContent='WASM — OK'; st.wasm.classList.add('ok'); log('WASM/module ready',true); return true;
   }
-  async function initModels(){ if(!vision){ var ok=await loadVision(); if(!ok) return; }
+  async function initModels(){ if(!vision){ const ok=await loadVision(); if(!ok) return; }
     try{
-      var fsr=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm');
-      detector=await ObjectDetector.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-tasks/object_detector/efficientdet_lite0_uint8.tflite', delegate:'CPU' }, runningMode:'IMAGE', scoreThreshold:0.5, maxResults:10 });
-      status.obj.textContent='Object — OK'; status.obj.classList.add('ok');
-      poser=await PoseLandmarker.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate:'CPU' }, runningMode:'IMAGE', numPoses:1 });
-      status.pose.textContent='Pose — OK'; status.pose.classList.add('ok');
-      facer=await FaceLandmarker.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate:'CPU' }, runningMode:'IMAGE', numFaces:1, outputFacialTransformationMatrixes:true });
-      status.face.textContent='Face — OK'; status.face.classList.add('ok');
-      STATE.modelsReady=true; runBtn.disabled=false; log('All models ready ✓',true);
-      if(STATE.imageReady) runAll();
-    }catch(e){ log('Init error: '+(e&&e.message?e.message:e),false); }
+      const fsr=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm');
+      detector=await ObjectDetector.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-tasks/object_detector/efficientdet_lite0_uint8.tflite', delegate:'CPU' }, runningMode:'IMAGE', scoreThreshold:0.5, maxResults:10 }); st.obj.textContent='Object — OK'; st.obj.classList.add('ok');
+      poser=await PoseLandmarker.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate:'CPU' }, runningMode:'IMAGE', numPoses:1 }); st.pose.textContent='Pose — OK'; st.pose.classList.add('ok');
+      facer=await FaceLandmarker.createFromOptions(fsr,{ baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate:'CPU' }, runningMode:'IMAGE', numFaces:1, outputFacialTransformationMatrixes:true }); st.face.textContent='Face — OK'; st.face.classList.add('ok');
+      STATE.modelsReady=true; runBtn.disabled=false; log('All models ready ✓',true); if(STATE.imageReady) runAll();
+    }catch(e){ log('Init error: '+(e.message||e),false); }
   }
   initModels();
 
-  // Overlay painters
-  function drawPose(res,a){ if(!res||!res.landmarks||!res.landmarks.length) return; var l=res.landmarks[0]; ctx.save(); ctx.globalAlpha=a||0.9; ctx.lineWidth=3; ctx.strokeStyle='rgba(102,255,153,.9)';
-    var E=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]];
-    for(var i=0;i<E.length;i++){ var p=l[E[i][0]], q=l[E[i][1]]; if(!p||!q) continue; ctx.beginPath(); ctx.moveTo(p.x*canvas.width,p.y*canvas.height); ctx.lineTo(q.x*canvas.width,q.y*canvas.height); ctx.stroke(); }
-    ctx.restore();
-  }
-  function drawFace(face,a){ if(!face||!face.faceLandmarks||!face.faceLandmarks.length) return; var LMK=face.faceLandmarks; ctx.save(); ctx.globalAlpha=a||0.9; ctx.fillStyle='rgba(255,220,140,.9)';
-    for(var i=0;i<LMK.length;i++){ var l=LMK[i]; for(var k=0;k<l.length;k++){ var p=l[k]; ctx.beginPath(); ctx.arc(p.x*canvas.width,p.y*canvas.height,1.6,0,6.283); ctx.fill(); } }
-    ctx.restore();
-  }
-  function scaleBox(b){ var sx=canvas.width/img.naturalWidth, sy=canvas.height/img.naturalHeight; return {x:b.originX*sx,y:b.originY*sy,w:b.width*sx,h:b.height*sy}; }
-  function drawObjects(res,a){ if(!res||!res.detections) return; ctx.save(); ctx.globalAlpha=a||0.9; ctx.lineWidth=2.2; ctx.font='12px ui-sans-serif'; ctx.fillStyle='#c7faff'; ctx.strokeStyle='rgba(62,248,255,.95)';
-    for(var i=0;i<res.detections.length;i++){ var d=res.detections[i]; var bb=scaleBox(d.boundingBox); ctx.strokeRect(bb.x,bb.y,bb.w,bb.h);
-      var name=(d.categories&&d.categories[0]&&d.categories[0].categoryName)||'object'; var s=(d.categories&&d.categories[0]&&d.categories[0].score)||0; var lab=name+' '+Math.round(s*100)+'%';
-      var tw=ctx.measureText(lab).width+12, th=18; ctx.fillStyle='rgba(15,27,38,.92)'; ctx.fillRect(bb.x,Math.max(0,bb.y-th),tw,th);
-      ctx.strokeStyle='rgba(62,248,255,.45)'; ctx.strokeRect(bb.x,Math.max(0,bb.y-th),tw,th); ctx.fillStyle='#c7faff'; ctx.fillText(lab,bb.x+6,Math.max(0,bb.y-th)+13); }
-    ctx.restore();
-  }
+  function drawPose(res,a){ if(!res||!res.landmarks||!res.landmarks.length) return; const l=res.landmarks[0]; ctx.save(); ctx.globalAlpha=a||0.9; ctx.lineWidth=3; ctx.strokeStyle='rgba(102,255,153,.9)'; const E=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]]; for(const [i,j] of E){ const p=l[i], q=l[j]; if(!p||!q) continue; ctx.beginPath(); ctx.moveTo(p.x*canvas.width,p.y*canvas.height); ctx.lineTo(q.x*canvas.width,q.y*canvas.height); ctx.stroke(); } ctx.restore(); }
+  function drawFace(face,a){ if(!face||!face.faceLandmarks||!face.faceLandmarks.length) return; const LMK=face.faceLandmarks; ctx.save(); ctx.globalAlpha=a||0.9; ctx.fillStyle='rgba(255,220,140,.9)'; for(const l of LMK){ for(const p of l){ ctx.beginPath(); ctx.arc(p.x*canvas.width,p.y*canvas.height,1.6,0,6.283); ctx.fill(); } } ctx.restore(); }
+  function scaleBox(b){ const sx=canvas.width/img.naturalWidth, sy=canvas.height/img.naturalHeight; return {x:b.originX*sx,y:b.originY*sy,w:b.width*sx,h:b.height*sy}; }
+  function drawObjects(res,a){ if(!res||!res.detections) return; ctx.save(); ctx.globalAlpha=a||0.9; ctx.lineWidth=2.2; ctx.font='12px ui-sans-serif'; ctx.fillStyle='#c7faff'; ctx.strokeStyle='rgba(62,248,255,.95)'; for(const d of res.detections){ const bb=scaleBox(d.boundingBox); ctx.strokeRect(bb.x,bb.y,bb.w,bb.h); const n=(d.categories&&d.categories[0]&&d.categories[0].categoryName)||'object'; const s=(d.categories&&d.categories[0]&&d.categories[0].score)||0; const lab=n+' '+Math.round(s*100)+'%'; const tw=ctx.measureText(lab).width+12, th=18; ctx.fillStyle='rgba(15,27,38,.92)'; ctx.fillRect(bb.x,Math.max(0,bb.y-th),tw,th); ctx.strokeStyle='rgba(62,248,255,.45)'; ctx.strokeRect(bb.x,Math.max(0,bb.y-th),tw,th); ctx.fillStyle='#c7faff'; ctx.fillText(lab,bb.x+6,Math.max(0,bb.y-th)+13); } ctx.restore(); }
 
-  // Run
-  async function runAll(){ log('Run start ▶',true); if(!STATE.imageReady){ log('No image loaded yet.',false); return; }
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(!STATE.modelsReady){ log('Models not ready; fallback edges only.',false); drawEdges(0.45); fallbackPrompt(); return; }
-    var objs=null, pose=null, face=null;
-    try{ pose=await poser.detect(img); }catch(e){ log('Pose detect failed: '+e.message,false); }
-    try{ face=await facer.detect(img); }catch(e){ log('Face detect failed: '+e.message,false); }
-    try{ objs=await detector.detect(img); }catch(e){ log('Object detect failed: '+e.message,false); }
-    drawPose(pose,0.9); drawFace(face,0.9); drawObjects(objs,0.9); drawEdges(0.22);
-    document.getElementById('objectList').innerHTML = (objs&&objs.detections&&objs.detections.length)? objs.detections.map(function(d){var n=d.categories[0].categoryName; var s=Math.round(d.categories[0].score*100); return '<div class="pill"><span>'+n+'</span><span>'+s+'%</span></div>';}).join('') : '<div class="pill"><span>—</span><span>n/a</span></div>';
-    document.getElementById('subjectList').innerHTML='<div class="pill"><span>Framing</span><span>'+(pose?'frontal/3⁄4':'unknown')+'</span></div>';
-    var c=analyzeColor(img); var pos='hyperreal portrait, subject centered'+(c?(', '+c.lighting+' lighting'):''); var neg='lowres, blur, watermark'; var comb=pos+'\nNEGATIVE: '+neg; document.getElementById('promptOut').value=comb; document.getElementById('promptChars').textContent=comb.length+' chars';
-    status.run.textContent='Detectors — OK'; status.run.classList.add('ok'); log('Analysis complete ✓',true);
-  }
-  document.getElementById('runBtn').addEventListener('click',function(){ log('Run clicked',true); runAll(); });
+  async function runAll(){ log('Run ▶',true); if(!STATE.imageReady){ log('No image loaded yet.',false); return; } ctx.clearRect(0,0,canvas.width,canvas.height); if(!STATE.modelsReady){ log('Models not ready; fallback edges only.',false); drawEdges(0.45); fallbackPrompt(); return; } let objs=null, pose=null, face=null; try{ pose=await poser.detect(img); }catch(e){ log('Pose detect failed: '+(e.message||e),false); } try{ face=await facer.detect(img); }catch(e){ log('Face detect failed: '+(e.message||e),false); } try{ objs=await detector.detect(img); }catch(e){ log('Object detect failed: '+(e.message||e),false); } drawPose(pose,0.9); drawFace(face,0.9); drawObjects(objs,0.9); drawEdges(0.22); $(ids.object).innerHTML=(objs&&objs.detections&&objs.detections.length)? objs.detections.map(d=>`<div class="pill"><span>${d.categories[0].categoryName}</span><span>${Math.round(d.categories[0].score*100)}%</span></div>`).join(''):'<div class="pill"><span>—</span><span>n/a</span></div>'; $(ids.subject).innerHTML='<div class="pill"><span>Framing</span><span>'+(pose?'frontal/3⁄4':'unknown')+'</span></div>'; const c=analyzeColor(img); const pos='hyperreal portrait, subject centered'+(c?(', '+c.lighting+' lighting'):''); const neg='lowres, blur, watermark'; $(ids.prompt).value=pos+'\nNEGATIVE: '+neg; st.run.textContent='Detectors — OK'; st.run.classList.add('ok'); log('Analysis complete ✓',true); }
+  $(ids.run).addEventListener('click',()=>runAll());
 })();
