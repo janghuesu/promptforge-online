@@ -1,11 +1,11 @@
-<!-- /imageintel.html — ImageIntel Pro Lab • BlackSite HUD • v1.2 (SyntaxFix) -->
+<!-- /imageintel.html — ImageIntel Pro Lab • BlackSite HUD • v1.3 (SingleCanvas, single-file, offline) -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="color-scheme" content="dark"/>
-<title>ImageIntel Pro Lab — v1.2</title>
+<title>ImageIntel Pro Lab — v1.3 SingleCanvas</title>
 <style>
   :root{--bg:#070a0f;--panel:#0c121b;--grid:rgba(255,255,255,.04);--text:#e6f1ff;--muted:#99a9c4;--chip:#101826}
   *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:radial-gradient(1200px 900px at 10% -10%,#0d1826,var(--bg)) fixed;color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
@@ -16,7 +16,8 @@
        grid-template-columns:1.25fr .75fr;grid-template-rows:62% 38%;grid-template-areas:"stage side" "kpi side"}
   .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.006));border:1px solid rgba(255,255,255,.08);border-radius:18px;backdrop-filter:blur(6px)}
   .title{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:#99a9c4}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap} .col{display:grid;gap:8px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .col{display:grid;gap:8px}
   .chip{background:var(--chip);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 10px;font-size:12px;color:#b6cdfb}
   .chip.ver{background:#0e2032;border-color:rgba(62,248,255,.55);color:#d7fdff}
   .chip.ok{border-color:rgba(102,255,153,.55);color:#d9ffe9} .chip.err{border-color:rgba(255,77,109,.6);color:#ffd7e0}
@@ -24,16 +25,10 @@
   .btn.secondary{border-color:rgba(102,255,153,.55);background:linear-gradient(180deg,rgba(102,255,153,.18),rgba(102,255,153,.07))}
   .btn.warn{border-color:rgba(255,209,102,.55);background:linear-gradient(180deg,rgba(255,209,102,.2),rgba(255,209,102,.08))}
   .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,.3)}
-  .toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-  .toggle input{appearance:none;width:30px;height:18px;border-radius:999px;background:#15202f;border:1px solid rgba(255,255,255,.2);position:relative}
-  .toggle input:checked{background:#113b3b;border-color:rgba(62,248,255,.5)}
-  .toggle input::after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;background:#9aa7bd;border-radius:50%;transition:160ms}
-  .toggle input:checked::after{left:calc(100% - 15px);background:#72ffd5}
   #stage{grid-area:stage;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
   .stage-head{padding:10px;display:flex;align-items:center;justify-content:space-between}
   .canvas-wrap{position:relative;overflow:hidden;background:#0b0f14;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);height:100%;min-height:360px}
-  #img{max-width:100%;max-height:100%;display:block;object-fit:contain}
-  #ovl{position:absolute;left:0;top:0;image-rendering:pixelated}
+  #view{position:absolute;left:0;top:0;width:100%;height:100%}
   .drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(255,255,255,.2);border-radius:12px;color:#9fb5d8;pointer-events:none;opacity:.18}
   #kpi{grid-area:kpi;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;overflow:auto}
   .kpi{background:#0d121a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;min-height:118px;display:grid;grid-template-rows:auto 1fr}
@@ -51,37 +46,35 @@
     <div class="stage-head">
       <div class="row">
         <span class="title">BLACKSITE HUD</span>
-        <span class="chip ver" id="ver">v1.2 — waiting for JS…</span>
+        <span class="chip ver" id="ver">v1.3 — waiting for JS…</span>
         <span class="chip">Objects</span><span class="chip">Pose</span><span class="chip">Face</span><span class="chip">Hands</span><span class="chip">Body Mesh</span><span class="chip">Silhouette</span><span class="chip">Seg</span><span class="chip">Edges</span>
         <span class="chip" id="fps">FPS — n/a</span>
       </div>
       <div class="row">
         <input id="file" type="file" accept="image/*" style="display:none"/>
         <label class="btn" for="file">Upload Image</label>
-        <button id="btnRun" class="btn secondary" disabled>Run Analysis</button>
+        <button id="btnRun" class="btn secondary">Run Analysis</button>
         <button id="btnOverlayTest" class="btn ghost">Overlay Test</button>
         <button id="btnMatrix" class="btn ghost" title="Inject a synthetic grid image">Matrix Test</button>
         <button id="btnSelf" class="btn ghost">Self-Test</button>
-        <button id="btnReinit" class="btn warn">Re-Init Models</button>
+        <button id="btnReset" class="btn warn">Hard Reset</button>
       </div>
     </div>
     <div class="canvas-wrap" id="wrap">
-      <img id="img" alt="input"/>
-      <canvas id="ovl"></canvas>
+      <!-- ONE canvas only -->
+      <canvas id="view"></canvas>
       <div class="drop" id="drop">Drop / Paste an image here</div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;">
       <div class="row">
-        <span class="chip" id="c-wasm">WASM — …</span>
-        <span class="chip" id="c-obj">Object — …</span>
-        <span class="chip" id="c-pose">Pose — …</span>
-        <span class="chip" id="c-face">Face — …</span>
+        <span class="chip" id="c-ui">UI — …</span>
         <span class="chip" id="c-img">Image — …</span>
-        <span class="chip" id="c-run">Detectors — …</span>
+        <span class="chip" id="c-run">Analysis — …</span>
       </div>
       <div class="row">
         <button id="btnPNG" class="btn">PNG</button>
         <button id="btnJSON" class="btn">Report .json</button>
+        <button id="btnCopyDiag" class="btn">Copy Diag</button>
       </div>
     </div>
   </section>
@@ -97,15 +90,7 @@
     <details open>
       <summary>Overlays & Controls</summary>
       <div class="row" style="padding:6px 8px;">
-        <label class="toggle"><input id="tg-obj" type="checkbox" checked><span>Objects</span></label>
-        <label class="toggle"><input id="tg-pose" type="checkbox" checked><span>Pose</span></label>
-        <label class="toggle"><input id="tg-face" type="checkbox" checked><span>Face</span></label>
-        <label class="toggle"><input id="tg-edges" type="checkbox" checked><span>Edges</span></label>
-      </div>
-      <div class="row" style="padding:0 8px 8px">
-        <div class="col" style="min-width:200px"><label>Objects Opacity</label><input id="op-obj" type="range" min="0" max="100" value="90"/></div>
-        <div class="col" style="min-width:200px"><label>Pose Opacity</label><input id="op-pose" type="range" min="0" max="100" value="90"/></div>
-        <div class="col" style="min-width:200px"><label>Face Opacity</label><input id="op-face" type="range" min="0" max="100" value="90"/></div>
+        <label class="col" style="min-width:200px"><span>Edges Opacity</span><input id="op-edges" type="range" min="0" max="100" value="45"/></label>
       </div>
     </details>
 
@@ -114,7 +99,13 @@
       <div class="row" style="padding:6px 8px;">
         <div class="col" style="min-width:180px;">
           <label>Prompt Mode</label>
-          <select id="pmode"><option value="sfw">SFW</option><option value="nsfw_safe">NSFW-safe (redacted)</option><option value="edgy">Edgy</option><option value="poetic">Poetic</option><option value="numeric">Numeric</option><option value="json">Raw JSON</option></select>
+          <select id="pmode">
+            <option value="sfw">SFW</option>
+            <option value="nsfw_safe">NSFW-safe (redacted)</option>
+            <option value="poetic">Poetic</option>
+            <option value="numeric">Numeric</option>
+            <option value="json">Raw JSON</option>
+          </select>
         </div>
         <div class="col" style="min-width:180px;">
           <label>Model Style</label>
@@ -124,13 +115,11 @@
           <label>Style Pack</label>
           <select id="spack"><option value="neutral">Neutral</option><option value="tealorange">Cinematic Teal/Orange</option><option value="pastel">Soft Pastel</option><option value="mono">High-Contrast Mono</option><option value="vintage">Warm Vintage</option></select>
         </div>
-        <div class="col" style="min-width:220px;">
-          <label>Detail</label><input id="detail" type="range" min="0" max="100" value="85"/>
-        </div>
+        <div class="col" style="min-width:220px;"><label>Detail</label><input id="detail" type="range" min="0" max="100" value="85"/></div>
       </div>
       <div class="col" style="padding:0 8px 8px;">
         <div class="row" style="justify-content:space-between;width:100%"><span class="title">Prompt Output</span><span class="chip" id="pch">0 chars</span></div>
-        <textarea id="prompt" rows="7" placeholder="Run analysis to generate a prompt…"></textarea>
+        <textarea id="prompt" rows="7" placeholder="Load an image to generate a prompt…"></textarea>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
           <div class="col"><label class="title">A</label><textarea id="pa" rows="6"></textarea></div>
           <div class="col"><label class="title">B</label><textarea id="pb" rows="6"></textarea></div>
@@ -156,156 +145,230 @@
 <div id="errbar" class="errbar"></div>
 
 <script>
-/* ===== UI/Engine (classic) — v1.2 ===== */
+/* ===== v1.3 SingleCanvas — NO <img>, NO external deps ===== */
 (function(){
   'use strict';
-  const $=(id)=>document.getElementById(id);
-  $('ver').textContent='v1.2 — JS OK ⬤';
+  const $ = (id)=>document.getElementById(id);
+  $('ver').textContent = 'v1.3 — JS OK ⬤';
 
-  const img=$('img'), wrap=$('wrap'), canvas=$('ovl'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+  // DOM / state
+  const wrap=$('wrap'), view=$('view'), vctx=view.getContext('2d',{willReadFrequently:true});
   const file=$('file'), run=$('btnRun'), term=$('term'), diag=$('diag'), fps=$('fps');
-  const chips={wasm:$('c-wasm'),obj:$('c-obj'),pose:$('c-pose'),face:$('c-face'),img:$('c-img'),run:$('c-run')};
-  const togg={obj:$('tg-obj'),pose:$('tg-pose'),face:$('tg-face'),edges:$('tg-edges')};
-  const ops={obj:$('op-obj'),pose:$('op-pose'),face:$('op-face')};
-  const k={subject:$('k-subject'),objects:$('k-objects'),pose:$('k-pose'),color:$('k-color')};
+  const chips={ui:$('c-ui'), img:$('c-img'), run:$('c-run')};
   const promptEl=$('prompt'), pch=$('pch');
-  const STATE={modelsReady:false,imageReady:false,lastDet:null,color:null};
+  const STATE={ base:null, // ImageBitmap or HTMLImageElement drawn to offscreen
+                off:document.createElement('canvas'), color:null, last:{}, hasImage:false };
 
-  function log(m,ok){const d=document.createElement('div');d.textContent=m;d.className='log'+(ok===true?' ok':ok===false?' err':'');term.appendChild(d);term.scrollTop=term.scrollHeight;}
-  function chip(el,ok,label){el.textContent=label+' — '+(ok?'OK':'ERR');el.classList.toggle('ok',!!ok);el.classList.toggle('err',!ok);}
-  function banner(msg){const b=$('errbar');b.textContent=msg;b.style.display='block';setTimeout(()=>b.style.display='none',7000);}
-  window.addEventListener('error',e=>{banner('JS: '+e.message);log('JS: '+e.message,false);});
-  window.addEventListener('unhandledrejection',e=>{const m='Promise: '+(e.reason&&e.reason.message?e.reason.message:e.reason);banner(m);log(m,false);});
+  // logger
+  function log(m,ok){ const d=document.createElement('div'); d.textContent=m; d.className='log'+(ok===true?' ok':ok===false?' err':''); term.appendChild(d); term.scrollTop=term.scrollHeight; }
+  function chip(el,ok,label){ el.textContent=label+' — '+(ok?'OK':'ERR'); el.classList.toggle('ok',!!ok); el.classList.toggle('err',!ok); }
+  function banner(msg){ const b=$('errbar'); b.textContent=msg; b.style.display='block'; setTimeout(()=>b.style.display='none',7000); }
+  window.addEventListener('error',e=>{ banner('JS: '+e.message); log('JS: '+e.message,false); });
+  window.addEventListener('unhandledrejection',e=>{ const m='Promise: '+(e.reason&&e.reason.message?e.reason.message:e.reason); banner(m); log(m,false); });
 
-  function fit(){if(!img.naturalWidth)return;const r=wrap.getBoundingClientRect(),ia=img.naturalWidth/img.naturalHeight,ra=r.width/r.height;let w,h;if(ia>ra){w=r.width;h=w/ia;}else{h=r.height;w=h*ia;}canvas.width=w|0;canvas.height=h|0;img.style.width=w+'px';img.style.height=h+'px';}
-  window.addEventListener('resize',fit); img.addEventListener('load',fit);
+  chip(chips.ui,true,'UI');
 
-  function edges(alpha){const w=canvas.width,h=canvas.height;if(!w||!h){log('Edges skipped (canvas 0)',false);return;}
-    const oc=document.createElement('canvas');oc.width=w;oc.height=h;const ox=oc.getContext('2d',{willReadFrequently:true});ox.drawImage(img,0,0,w,h);
-    const src=ox.getImageData(0,0,w,h);const out=ox.createImageData(w,h);const Gx=[-1,0,1,-2,0,2,-1,0,1],Gy=[-1,-2,-1,0,0,0,1,2,1];
-    for(let y=1;y<h-1;y++){for(let x=1;x<w-1;x++){let sx=0,sy=0,p=0;for(let ky=-1;ky<=1;ky++){for(let kx=-1;kx<=1;kx++){const ix=((y+ky)*w+(x+kx))*4;const lum=0.2126*src.data[ix]+0.7152*src.data[ix+1]+0.0722*src.data[ix+2];sx+=lum*Gx[p];sy+=lum*Gy[p];p++;}}const m=Math.min(255,Math.hypot(sx,sy));const o=(y*w+x)*4;out.data[o]=out.data[o+1]=out.data[o+2]=m;out.data[o+3]=m>40?255:0;}}
-    ox.putImageData(out,0,0);ctx.save();ctx.globalAlpha=alpha??0.45;ctx.drawImage(oc,0,0);ctx.restore();log('Edges overlay ✓',true);}
+  // sizing
+  function fit(){ const r=wrap.getBoundingClientRect(); view.width=r.width|0; view.height=r.height|0; if(STATE.base) redraw(); }
+  window.addEventListener('resize',fit); fit();
 
-  function colorStats(el){const c=document.createElement('canvas'),cx=c.getContext('2d'),w=el.naturalWidth,h=el.naturalHeight;const s=Math.min(1,180/Math.max(w,h));c.width=(w*s)|0;c.height=(h*s)|0;cx.drawImage(el,0,0,c.width,c.height);const d=cx.getImageData(0,0,c.width,c.height).data;let lum=0,n=0;for(let i=0;i<d.length;i+=24){lum+=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255;n++;}const L=+(lum/(n||1)).toFixed(3);return{avg_brightness:L,lighting:(L>0.7?'bright':(L<0.35?'dim':'moderate'))};}
-  function makePrompt(det){const mode=$('pmode').value,style=$('mstyle').value,pack=$('spack').value,detail=+$('detail').value;const c=STATE.color||{lighting:'moderate'};const subj=det?.subject||'subject centered';const objList=(det?.objects||[]).slice(0,6).map(o=>o.name).join(', ');const pose=det?.poseAngle?`pose: shoulders ${det.poseAngle.shoulders.toFixed(1)}°, hips ${det.poseAngle.hips.toFixed(1)}°`:'';const camera=detail>=70?' [camera: 50mm, f/2.8, ISO 200, 1/250]':'';const base=`${style==='jugger'?'ultra-detailed, hyperreal, ':'photorealistic, '}${subj}, ${c.lighting} lighting${objList?`, objects: ${objList}`:''}${pose?`, ${pose}`:''}${camera}`;const stylePack=pack==='tealorange'?' cinematic teal & orange grade':pack==='pastel'?' soft pastel tones':pack==='mono'?' high-contrast monochrome':pack==='vintage'?' warm vintage film':'';const negative='lowres, blur, watermark, duplicate';let out=base+stylePack;if(mode==='poetic')out=`a vivid portrait, ${subj}; ${c.lighting} light wraps edges; ${objList||'clean frame'}`;if(mode==='numeric')out=`detail:${detail} | luminance:${(STATE.color?.avg_brightness??0).toFixed(2)} | objs:${(det?.objects?.length||0)}`;if(mode==='json')out=JSON.stringify({style,pack,detail,subject:subj,lighting:c.lighting,objects:det?.objects||[],pose:det?.poseAngle||null},null,2);if(mode==='nsfw_safe')out=out.replace(/\b(nude|naked|breast|nipples?|vagina|penis|butt|ass)\b/gi,'[redacted]');return{text:out+(mode==='json'?'':`\nNEGATIVE: ${negative}`)};}
-  function renderPrompt(det){const t=makePrompt(det).text;promptEl.value=t;pch.textContent=t.length+' chars';}
-
-  function onImage(){fit();chip(chips.img,true,'Image');STATE.imageReady=true;log('Image onload ✓',true);ctx.clearRect(0,0,canvas.width,canvas.height);if($('tg-edges').checked)edges(.45);STATE.color=colorStats(img);$('k-color').innerHTML=`<div class="pill"><span>Brightness</span><span>${STATE.color.avg_brightness}</span></div><div class="pill"><span>Lighting</span><span>${STATE.color.lighting}</span></div>`;renderPrompt(null);run.disabled=false;}
-
-  async function loadViaBlobURL(file){const url=URL.createObjectURL(file);log('Decode: blob-url',true);return{url,revoke:true};}
-  async function loadViaBitmap(file){try{const bmp=await createImageBitmap(file);const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;c.getContext('2d').drawImage(bmp,0,0);const url=c.toDataURL('image/png');log('Decode: createImageBitmap→toDataURL',true);return{url,revoke:false};}catch(e){log('Bitmap path failed: '+e.message,false);return null;}}
-  async function loadViaReader(file){return await new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=()=>rej(fr.error);fr.onload=()=>{log('Decode: FileReader(dataURL)',true);res({url:fr.result,revoke:false});};fr.readAsDataURL(file);});}
-
-  async function loadFile(file){
-    if(!file){log('Picker returned no file',false);return;}
-    log(`Picked file: name="${file.name}" type="${file.type}" size=${file.size}B`,true);
-    if(!/^image\//i.test(file.type)){chip(chips.img,false,'Image');log('Unsupported MIME, expected image/*',false);return;}
-    let res=await loadViaBlobURL(file); if(!res) res=await loadViaBitmap(file); if(!res){try{res=await loadViaReader(file);}catch(e){log('Reader path failed: '+e.message,false);}}
-    if(!res){chip(chips.img,false,'Image');log('All decoders failed',false);return;}
-    img.onload=()=>{ if(res.revoke) try{URL.revokeObjectURL(res.url);}catch{} onImage(); };
-    img.onerror=()=>{chip(chips.img,false,'Image');STATE.imageReady=false;log('Image element error (broken src)',false);};
-    img.decoding='async'; img.loading='eager'; img.src=res.url;
+  // draw base + overlays
+  function redraw(){
+    const ctx=vctx, base=STATE.base; if(!base){ ctx.clearRect(0,0,view.width,view.height); return; }
+    const bw=base.width||base.naturalWidth, bh=base.height||base.naturalHeight;
+    const ia=bw/bh, ra=view.width/view.height; let w,h;
+    if(ia>ra){ w=view.width; h=w/ia; } else { h=view.height; w=h*ia; }
+    const x=(view.width-w)/2, y=(view.height-h)/2;
+    ctx.clearRect(0,0,view.width,view.height);
+    ctx.drawImage(base, x, y, w, h);
+    if(+$('op-edges').value>0) drawEdges(ctx, x, y, w, h, (+$('op-edges').value)/100);
   }
 
-  const wrap=$('wrap');
+  // edges overlay (Sobel)
+  function drawEdges(ctx, x, y, w, h, alpha){
+    const oc=STATE.off; oc.width=w|0; oc.height=h|0; const ox=oc.getContext('2d',{willReadFrequently:true});
+    ox.drawImage(STATE.base,0,0,w,h);
+    const src=ox.getImageData(0,0,w,h); const out=ox.createImageData(w,h);
+    const Gx=[-1,0,1,-2,0,2,-1,0,1], Gy=[-1,-2,-1,0,0,0,1,2,1];
+    for(let yy=1;yy<h-1;yy++){ for(let xx=1;xx<w-1;xx++){
+      let sx=0,sy=0,p=0;
+      for(let ky=-1;ky<=1;ky++){ for(let kx=-1;kx<=1;kx++){
+        const ix=((yy+ky)*w+(xx+kx))*4;
+        const lum=0.2126*src.data[ix]+0.7152*src.data[ix+1]+0.0722*src.data[ix+2];
+        sx+=lum*Gx[p]; sy+=lum*Gy[p]; p++;
+      } }
+      const m=Math.min(255,Math.hypot(sx,sy)); const o=(yy*w+xx)*4;
+      out.data[o]=out.data[o+1]=out.data[o+2]=m; out.data[o+3]=m>40?255:0;
+    } }
+    ox.putImageData(out,0,0);
+    ctx.save(); ctx.globalAlpha=alpha??0.45; ctx.drawImage(oc,x,y); ctx.restore();
+  }
+
+  // color stats
+  function colorStats(base){
+    const w=base.width||base.naturalWidth, h=base.height||base.naturalHeight;
+    const s=Math.max(1, Math.floor(Math.max(w,h)/180));
+    const c=document.createElement('canvas'); c.width=Math.max(1,Math.floor(w/s)); c.height=Math.max(1,Math.floor(h/s));
+    const cx=c.getContext('2d'); cx.drawImage(base,0,0,c.width,c.height);
+    const d=cx.getImageData(0,0,c.width,c.height).data; let lum=0,n=0;
+    for(let i=0;i<d.length;i+=24){ lum+=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255; n++; }
+    const L=+(lum/(n||1)).toFixed(3);
+    return {avg_brightness:L, lighting:(L>0.7?'bright':(L<0.35?'dim':'moderate'))};
+  }
+
+  // prompts
+  function makePrompt(det){
+    const mode=$('pmode').value, style=$('mstyle').value, pack=$('spack').value, detail=+$('detail').value;
+    const c=STATE.color||{lighting:'moderate'};
+    const subj=det?.subject||'subject centered';
+    const camera = detail>=70? ' [camera: 50mm, f/2.8, ISO 200, 1/250]':'';
+    const stylePack = pack==='tealorange'?' cinematic teal & orange grade':
+                      pack==='pastel'?' soft pastel tones':
+                      pack==='mono'?' high-contrast monochrome':
+                      pack==='vintage'?' warm vintage film':'';
+    const base = `${style==='jugger'?'ultra-detailed, hyperreal, ':'photorealistic, '}${subj}, ${c.lighting} lighting${camera}${stylePack}`;
+    const negative='lowres, blur, watermark, duplicate';
+    let out = base;
+    if(mode==='poetic') out = `a vivid portrait, ${subj}; ${c.lighting} light wraps edges`;
+    if(mode==='numeric') out = `detail:${detail} | luminance:${(STATE.color?.avg_brightness??0).toFixed(2)}`;
+    if(mode==='json') out = JSON.stringify({style,pack,detail,subject:subj,lighting:c.lighting},null,2);
+    if(mode==='nsfw_safe') out = out.replace(/\b(nude|naked|breast|nipples?|vagina|penis|butt|ass)\b/gi,'[redacted]');
+    return {text: out + (mode==='json'?'':`\nNEGATIVE: ${negative}`)};
+  }
+  function renderPrompt(det){ const t=makePrompt(det).text; promptEl.value=t; pch.textContent=t.length+' chars'; }
+
+  // decode helpers
+  async function decodeBitmap(file){
+    try{
+      const bmp=await createImageBitmap(file);
+      log('Decode: createImageBitmap ✓',true);
+      return bmp;
+    }catch(e){
+      log('Bitmap path failed: '+(e.message||e),false);
+      return null;
+    }
+  }
+  function decodeReader(file){
+    return new Promise((res,rej)=>{
+      const fr=new FileReader();
+      fr.onerror=()=>rej(fr.error);
+      fr.onload=()=>{
+        const img=new Image(); img.decoding='async';
+        img.onload=()=>res(img); img.onerror=()=>rej(new Error('dataURL decode failed'));
+        img.src=fr.result;
+      };
+      fr.readAsDataURL(file);
+    }).then(img=>{ log('Decode: FileReader(dataURL) ✓',true); return img; })
+      .catch(e=>{ log('Reader path failed: '+(e.message||e),false); return null; });
+  }
+  async function loadFile(file){
+    if(!file){ log('Picker returned no file',false); return; }
+    log(`Picked file: "${file.name}"  type=${file.type||'?'}  size=${file.size}B`,true);
+    if(!/^image\//i.test(file.type||'')){ chip(chips.img,false,'Image'); log('Unsupported MIME (need image/*)',false); return; }
+
+    // 1) Blob URL path via HTMLImageElement (safer on some mobiles)
+    let imgEl=null;
+    try{
+      const url=URL.createObjectURL(file);
+      imgEl = await new Promise((res,rej)=>{ const im=new Image(); im.decoding='async'; im.onload=()=>res(im); im.onerror=()=>rej(new Error('blob-url decode failed')); im.src=url; });
+      URL.revokeObjectURL(url);
+      log('Decode: blob-url ✓',true);
+    }catch(e){ log('Blob-url path failed: '+(e.message||e),false); }
+
+    // 2) createImageBitmap path (if blob-url failed)
+    let base = imgEl || await decodeBitmap(file) || await decodeReader(file);
+    if(!base){ chip(chips.img,false,'Image'); log('All decoders failed',false); return; }
+
+    STATE.base = base; STATE.hasImage=true; chip(chips.img,true,'Image');
+    STATE.color=colorStats(base);
+    $('k-color').innerHTML=`<div class="pill"><span>Brightness</span><span>${STATE.color.avg_brightness}</span></div>
+                            <div class="pill"><span>Lighting</span><span>${STATE.color.lighting}</span></div>`;
+    redraw();
+    renderPrompt(null);
+    log('Image loaded ✓',true);
+  }
+
+  // drag/paste/file
   wrap.addEventListener('dragover',e=>{e.preventDefault();$('drop').style.opacity='.36';});
   wrap.addEventListener('dragleave',e=>{e.preventDefault();$('drop').style.opacity='.18';});
-  wrap.addEventListener('drop',e=>{e.preventDefault();$('drop').style.opacity='.18';const f=e.dataTransfer?.files?.[0];if(f)loadFile(f);else log('Drop had no files',false);});
-  window.addEventListener('paste',e=>{const it=(e.clipboardData&&e.clipboardData.items)||[];for(const x of it){if(x.type.indexOf('image/')===0){const f=x.getAsFile();if(f){log('Paste: got image',true);loadFile(f);}return;}}log('Paste: no image item',false);});
+  wrap.addEventListener('drop',e=>{e.preventDefault();$('drop').style.opacity='.18'; const f=e.dataTransfer?.files?.[0]; if(f) loadFile(f); else log('Drop had no files',false);});
+  window.addEventListener('paste',e=>{
+    const it=(e.clipboardData&&e.clipboardData.items)||[];
+    for(const x of it){ if(x.type.indexOf('image/')===0){ const f=x.getAsFile(); if(f){ log('Paste: got image',true); loadFile(f);} return; } }
+    log('Paste: no image item',false);
+  });
   document.querySelector('label[for="file"]').addEventListener('click',()=>log('Picker opened…',true));
-  file.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)loadFile(f);else log('Picker canceled',false);});
+  file.addEventListener('change',e=>{ const f=e.target.files?.[0]; if(f) loadFile(f); else log('Picker canceled',false); });
 
-  $('btnOverlayTest').addEventListener('click',()=>{ctx.clearRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='#9ad1ff';ctx.shadowColor='#9ad1ff';ctx.shadowBlur=8;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(canvas.width,canvas.height);ctx.moveTo(canvas.width,0);ctx.lineTo(0,canvas.height);ctx.stroke();ctx.font='16px ui-sans-serif';ctx.fillStyle='#9ad1ff';ctx.fillText('OVERLAY OK',12,22);log('Overlay test ✓',true);});
-  $('btnMatrix').addEventListener('click',()=>{const w=640,h=896;const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#0b0f14';g.fillRect(0,0,w,h);g.strokeStyle='rgba(255,255,255,.12)';for(let x=0;x<w;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}for(let y=0;y<h;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}g.fillStyle='#8fd1ff';g.font='20px ui-sans-serif';g.fillText('MATRIX TEST',20,36);img.onload=onImage;img.src=c.toDataURL('image/png');log('Matrix test image injected',true);});
+  // buttons
+  $('btnOverlayTest').addEventListener('click',()=>{
+    const c=view,ctx=vctx; ctx.clearRect(0,0,c.width,c.height);
+    ctx.strokeStyle='#9ad1ff'; ctx.shadowColor='#9ad1ff'; ctx.shadowBlur=8; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(c.width,c.height); ctx.moveTo(c.width,0); ctx.lineTo(0,c.height); ctx.stroke();
+    ctx.font='16px ui-sans-serif'; ctx.fillStyle='#9ad1ff'; ctx.fillText('OVERLAY OK',12,22);
+    log('Overlay test ✓',true);
+  });
+  $('btnMatrix').addEventListener('click',()=>{
+    const w=640,h=896; const c=document.createElement('canvas'); c.width=w;c.height=h; const g=c.getContext('2d');
+    g.fillStyle='#0b0f14'; g.fillRect(0,0,w,h); g.strokeStyle='rgba(255,255,255,.12)';
+    for(let x=0;x<w;x+=32){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); }
+    for(let y=0;y<h;y+=32){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
+    g.fillStyle='#8fd1ff'; g.font='20px ui-sans-serif'; g.fillText('MATRIX TEST',20,36);
+    const im=new Image(); im.onload=()=>{ STATE.base=im; STATE.hasImage=true; chip(chips.img,true,'Image'); STATE.color=colorStats(im); redraw(); renderPrompt(null); log('Matrix test image injected ✓',true); };
+    im.src=c.toDataURL('image/png');
+  });
+  $('btnSelf').addEventListener('click',()=>{
+    diag.textContent=[
+      'Version: v1.3 SingleCanvas',
+      'URL: '+location.href,
+      'UA: '+navigator.userAgent,
+      'Lang: '+navigator.language,
+      'Platform: '+navigator.platform,
+      'Cores: '+(navigator.hardwareConcurrency||'?'),
+      'MemoryGB: '+(navigator.deviceMemory||'?')
+    ].join('\n');
+    log('Self-test ✓',true);
+  });
+  $('btnReset').addEventListener('click',()=>{ STATE.base=null; STATE.hasImage=false; vctx.clearRect(0,0,view.width,view.height); chip(chips.img,false,'Image'); promptEl.value=''; $('pa').value=$('pb').value=$('pc').value=''; $('k-color').innerHTML=''; log('Reset ✓',true); });
 
-  $('btnPNG').addEventListener('click',()=>{try{const c=document.createElement('canvas');const w=canvas.width,h=canvas.height;c.width=w;c.height=h;const cx=c.getContext('2d');cx.drawImage(img,0,0,w,h);cx.drawImage(canvas,0,0,w,h);const a=document.createElement('a');a.download='overlays.png';a.href=c.toDataURL('image/png');a.click();log('Export PNG ✓',true);}catch(e){log('Export PNG failed: '+e.message,false);}});
-  $('btnJSON').addEventListener('click',()=>{const payload={version:'v1.2',detections:STATE.lastDet||null,color:STATE.color,time:new Date().toISOString()};const a=document.createElement('a');a.download='report.json';a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(payload,null,2));a.click();});
-
-  $('btnCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(promptEl.value);log('Prompt copied ✓',true);}catch(e){log('Copy failed',false);}});
-  $('btnTxt').addEventListener('click',()=>{const a=document.createElement('a');a.download='prompt.txt';a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(promptEl.value);a.click();});
-  $('btnGenABC').addEventListener('click',()=>{const det=STATE.lastDet||{};const v1=makePrompt(det).text,v2=makePrompt({...det,subject:'rule-of-thirds, subject left'}).text,v3=makePrompt({...det,subject:'tight head-and-shoulders crop'}).text;$('pa').value=v1;$('pb').value=v2;$('pc').value=v3;});
-  $('btnCopyABC').addEventListener('click',async()=>{const t=`A)\n${$('pa').value}\n\nB)\n${$('pb').value}\n\nC)\n${$('pc').value}`;try{await navigator.clipboard.writeText(t);log('A/B/C copied ✓',true);}catch(e){log('Copy failed',false);}});
-
-  (function tick(){fps.textContent='FPS — '+(1000/16.7).toFixed(1);requestAnimationFrame(tick);})();
-
-  // Vision bridge
-  let Vision=null;
-  window.addEventListener('vision-ready',()=>{log('Vision module ready (loader OK)',true);if(Vision && !STATE.modelsReady){initModels();}});
-  function ensureVision(){if(Vision)return true;if(!window.ImageIntelVision)return false;Vision=window.ImageIntelVision;return true;}
-  async function initModels(){if(!ensureVision()){log('Vision not injected yet (module loader pending)…');return;}
-    try{await Vision.init({delegate:'CPU'});STATE.modelsReady=true;chip(chips.wasm,true,'WASM');chip(chips.obj,true,'Object');chip(chips.pose,true,'Pose');chip(chips.face,true,'Face');log('Models ready ✓',true);if(STATE.imageReady)run.click();}catch(e){chip(chips.wasm,false,'WASM');log('Init error: '+e.message,false);}}
-  $('btnReinit').addEventListener('click',initModels);
-
-  function n2c(x,y){return [x*canvas.width,y*canvas.height];}
-  function drawPose(res){if(!res?.landmarks?.length||!$('tg-pose').checked)return;const l=res.landmarks[0];ctx.save();ctx.globalAlpha=(+ops.pose.value||90)/100;ctx.lineWidth=3;ctx.strokeStyle='rgba(102,255,153,.9)';const E=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]];for(const [a,b] of E){const p=l[a],q=l[b];if(!p||!q)continue;ctx.beginPath();const [x1,y1]=n2c(p.x,p.y),[x2,y2]=n2c(q.x,q.y);ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}ctx.restore();}
-  function drawFace(res){if(!res?.faceLandmarks?.length||!$('tg-face').checked)return;ctx.save();ctx.globalAlpha=(+ops.face.value||90)/100;ctx.fillStyle='rgba(255,220,140,.9)';for(const l of res.faceLandmarks){for(const p of l){const [x,y]=n2c(p.x,p.y);ctx.beginPath();ctx.arc(x,y,1.6,0,6.283);ctx.fill();}}ctx.restore();}
-  function drawObjects(res){if(!res?.detections||!$('tg-obj').checked)return;ctx.save();ctx.globalAlpha=(+ops.obj.value||90)/100;ctx.lineWidth=2.2;ctx.font='12px ui-sans-serif';for(const d of res.detections){const bb=d.boundingBox;const sx=canvas.width/img.naturalWidth,sy=canvas.height/img.naturalHeight;const x=bb.originX*sx,y=bb.originY*sy,w=bb.width*sx,h=bb.height*sy;ctx.strokeStyle='rgba(62,248,255,.95)';ctx.strokeRect(x,y,w,h);const name=d.categories?.[0]?.categoryName||'object';const sc=Math.round((d.categories?.[0]?.score||0)*100);const lab=`${name} ${sc}%`;const tw=ctx.measureText(lab).width+10,th=18;ctx.fillStyle='rgba(15,27,38,.92)';ctx.fillRect(x,Math.max(0,y-th),tw,th);ctx.strokeStyle='rgba(62,248,255,.45)';ctx.strokeRect(x,Math.max(0,y-th),tw,th);ctx.fillStyle='#c7faff';ctx.fillText(lab,x+6,Math.max(0,y-th)+13);}ctx.restore();}
-
-  async function runAnalysis(){
-    log('Run ▶',true);
-    if(!STATE.imageReady){log('No image loaded',false);return;}
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(!STATE.modelsReady||!ensureVision()){log('Models not ready → edges & prompt only',false);if($('tg-edges').checked)edges(.45);renderPrompt(null);return;}
+  $('btnPNG').addEventListener('click',()=>{
     try{
-      const det=await Vision.detect(img);STATE.lastDet=det;
-      $('k-objects').innerHTML=(det.objRaw?.detections||[]).map(d=>`<div class="pill"><span>${d.categories?.[0]?.categoryName||'object'}</span><span>${Math.round((d.categories?.[0]?.score||0)*100)}%</span></div>`).join('')||'<div class="pill"><span>—</span><span>n/a</span></div>';
-      $('k-subject').innerHTML=`<div class="pill"><span>Framing</span><span>${det.subject||'frontal/3⁄4'}</span></div>`;
-      $('k-pose').innerHTML=det.poseAngle?`<div class="pill"><span>Shoulders</span><span>${det.poseAngle.shoulders.toFixed(1)}°</span></div><div class="pill"><span>Hips</span><span>${det.poseAngle.hips.toFixed(1)}°</span></div>`:'<div class="pill"><span>—</span><span>n/a</span></div>';
-      drawPose(det.poseRaw);drawFace(det.faceRaw);drawObjects(det.objRaw);if($('tg-edges').checked)edges(.22);
-      det.objects=(det.objRaw?.detections||[]).map(d=>({name:d.categories?.[0]?.categoryName||'object',score:d.categories?.[0]?.score||0}));
-      renderPrompt(det);chip(chips.run,true,'Detectors');log('Analysis complete ✓',true);
-    }catch(e){chip(chips.run,false,'Detectors');log('Run error: '+e.message,false);if($('tg-edges').checked)edges(.45);renderPrompt(null);}
+      const c=document.createElement('canvas'); c.width=view.width; c.height=view.height;
+      const cx=c.getContext('2d'); cx.drawImage(view,0,0);
+      const a=document.createElement('a'); a.download='overlays.png'; a.href=c.toDataURL('image/png'); a.click(); log('Export PNG ✓',true);
+    }catch(e){ log('Export PNG failed: '+e.message,false); }
+  });
+  $('btnJSON').addEventListener('click',()=>{
+    const payload={version:'v1.3',color:STATE.color,time:new Date().toISOString()};
+    const a=document.createElement('a'); a.download='report.json'; a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(payload,null,2)); a.click();
+  });
+  $('btnCopyDiag').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(term.textContent||''); log('Diag copied ✓',true);}catch(e){ log('Copy failed',false);} });
+
+  $('btnCopy').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(promptEl.value); log('Prompt copied ✓',true);}catch(e){ log('Copy failed',false);} });
+  $('btnTxt').addEventListener('click',()=>{ const a=document.createElement('a'); a.download='prompt.txt'; a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(promptEl.value); a.click(); });
+  $('btnGenABC').addEventListener('click',()=>{ const det=STATE.last||{}; const v1=makePrompt(det).text, v2=makePrompt({...det, subject:'rule-of-thirds, subject left'}).text, v3=makePrompt({...det, subject:'tight head-and-shoulders crop'}).text; $('pa').value=v1; $('pb').value=v2; $('pc').value=v3; });
+  $('btnCopyABC').addEventListener('click',async()=>{ const t=`A)\n${$('pa').value}\n\nB)\n${$('pb').value}\n\nC)\n${$('pc').value}`; try{ await navigator.clipboard.writeText(t); log('A/B/C copied ✓',true);}catch(e){ log('Copy failed',false); } });
+
+  // analysis (offline: edges + color → subject summary)
+  function analyze(){
+    if(!STATE.hasImage){ log('Run: no image yet',false); return; }
+    const det={ subject:'subject centered' };
+    $('k-subject').innerHTML = `<div class="pill"><span>Framing</span><span>${det.subject}</span></div>`;
+    $('k-objects').innerHTML = '<div class="pill"><span>—</span><span>n/a</span></div>';
+    $('k-pose').innerHTML = '<div class="pill"><span>—</span><span>n/a</span></div>';
+    redraw(); // ensures edges opacity applied
+    renderPrompt(det);
+    chip(chips.run,true,'Analysis');
+    log('Analysis (offline) ✓',true);
   }
-  $('btnRun').addEventListener('click',runAnalysis);
+  $('btnRun').addEventListener('click',analyze);
 
-  diag.textContent=['Boot: UI wired ✓','Tip: upload/drag/paste an image; edges show instantly.','If Mediapipe fails, you still get edges + prompt.'].join('\n');
+  // live FPS hint
+  (function tick(){ fps.textContent='FPS — '+(1000/16.7).toFixed(1); requestAnimationFrame(tick); })();
+
+  // initial diag
+  diag.textContent=['Boot: UI wired ✓','SingleCanvas mode (no <img> in DOM).','Load an image: Upload, Drag/Drop, or Paste.'].join('\n');
 })();
-</script>
-
-<!-- ===== Vision (ESM) — v1.2 (no 'export' anywhere) ===== -->
-<script type="module">
-const CDN='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21';
-let FilesetResolver,ObjectDetector,PoseLandmarker,FaceLandmarker;
-try{
-  ({FilesetResolver,ObjectDetector,PoseLandmarker,FaceLandmarker} = await import(`${CDN}/vision_bundle.mjs`));
-}catch(e){
-  console.warn('Vision import failed',e);
-  window.ImageIntelVision = null;
-  window.dispatchEvent(new CustomEvent('vision-ready')); // still wake UI
-}
-
-let detector=null, poser=null, facer=null, fsr=null;
-
-async function init({delegate='CPU'}={}){
-  fsr = await FilesetResolver.forVisionTasks(`${CDN}/wasm`);
-  detector = await ObjectDetector.createFromOptions(fsr,{
-    baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-tasks/object_detector/efficientdet_lite0_uint8.tflite', delegate },
-    runningMode:'IMAGE', scoreThreshold:0.5, maxResults:10
-  });
-  poser = await PoseLandmarker.createFromOptions(fsr,{
-    baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate },
-    runningMode:'IMAGE', numPoses:1
-  });
-  facer = await FaceLandmarker.createFromOptions(fsr,{
-    baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate },
-    runningMode:'IMAGE', numFaces:1, outputFacialTransformationMatrixes:true
-  });
-}
-
-function deg(a,b){ return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI; }
-
-async function detect(imgEl){
-  const objRaw = await detector.detect(imgEl);
-  const poseRaw = await poser.detect(imgEl);
-  const faceRaw = await facer.detect(imgEl);
-  let shoulders=0, hips=0, subject='frontal/3⁄4';
-  const l=poseRaw?.landmarks?.[0];
-  if(l){ if(l[11]&&l[12]) shoulders=deg(l[11],l[12]); if(l[23]&&l[24]) hips=deg(l[23],l[24]); subject = Math.abs(shoulders)>25 ? 'profile-ish' : 'frontal/3⁄4'; }
-  return {subject, poseAngle:l?{shoulders,hips}:null, objRaw, poseRaw, faceRaw};
-}
-
-window.ImageIntelVision = { init, detect };
-window.dispatchEvent(new CustomEvent('vision-ready'));
 </script>
 </body>
 </html>
