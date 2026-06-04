@@ -10,7 +10,7 @@
   <meta name="keywords" content="PromptForge, prompt builder, SDXL, Flux, Midjourney, Runway, AI image prompts, NSFW prompts, SFW prompts, cinematic lighting, gel lighting, editorial, boudoir, video prompts, motion prompts, framing tokens" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <link rel="canonical" href="https://promptforge.online/builder" />
-  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" href="favicon.svg" />
   <!-- Open Graph / Twitter -->
   <meta property="og:site_name" content="PromptForge Online" />
   <meta property="og:locale" content="en_CA" />
@@ -187,12 +187,30 @@
     <aside class="sidebar">
       <div class="group">
         <label class="g-title" for="engineSel">Engine <span class="help" title="Adds engine-specific tokens and auto-negatives.">?</span></label>
-        <select id="engineSel" aria-label="Engine"></select>
+        <select id="engineSel" aria-label="Engine">
+            <option value="sdxl" selected>SDXL / Stable Diffusion XL</option>
+            <option value="flux">Flux</option>
+            <option value="midjourney">Midjourney</option>
+            <option value="realvis">RealVis</option>
+            <option value="dreamshaper">DreamShaper</option>
+            <option value="cyberrealistic">CyberRealistic</option>
+          </select>
       </div>
       <div class="group row">
         <div>
           <label class="g-title" for="genreSel">Genre <span class="help" title="Sets sensible defaults (lighting, lens, palette)">?</span></label>
-          <select id="genreSel" aria-label="Genre"></select>
+          <select id="genreSel" aria-label="Genre">
+            <option value="portrait" selected>portrait</option>
+            <option value="editorial">editorial</option>
+            <option value="fashion">fashion</option>
+            <option value="fantasy">fantasy</option>
+            <option value="horror">horror</option>
+            <option value="romance">romance</option>
+            <option value="sci-fi">sci-fi</option>
+            <option value="nature">nature</option>
+            <option value="architecture">architecture</option>
+            <option value="street">street</option>
+          </select>
         </div>
         <div>
           <label class="g-title" for="vibeSel">Vibe <span class="help" title="Softcore maps explicit slang → tasteful. Hardcore keeps explicit tokens.">?</span></label>
