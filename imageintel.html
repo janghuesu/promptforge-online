@@ -42,8 +42,15 @@
   textarea{width:100%;resize:vertical;background:#05070b;color:#e6f1ff;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px}
   .errbar{position:fixed;left:12px;right:12px;bottom:12px;background:#2a0f12;border:1px solid #ff4d6d;color:#ffdbe2;padding:10px;border-radius:12px;z-index:9999;display:none}
 </style>
+<style>
+  #gt-wrap{position:fixed;top:8px;right:8px;z-index:9999;background:rgba(7,10,15,.88);border-radius:8px;padding:4px 8px}
+  .goog-te-gadget{font-size:0!important}
+  .goog-te-gadget select{font-size:12px!important;background:#0c121b;color:#e6f1ff;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 6px;cursor:pointer}
+  .goog-te-logo-link,.goog-te-gadget span{display:none!important}
+</style>
 </head>
 <body>
+<div id="gt-wrap"><div id="google_translate_element"></div></div>
 <div class="app">
   <section id="stage" class="card">
     <div class="stage-head">
@@ -441,5 +448,7 @@
 <script type="module">
 // This block only ensures the CDN module is cache-warmed by the browser. Real init is in classic JS via dynamic import.
 </script>
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script>function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'ko,ja,zh-CN,es,fr,de,pt'},'google_translate_element')}</script>
 </body>
 </html>

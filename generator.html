@@ -45,10 +45,15 @@
       .container { padding: .9rem; }
       .row { flex-direction: column; gap: .7rem; }
     }
+    #google_translate_element{display:inline-block;margin-top:.5rem}
+    .goog-te-gadget{font-size:0!important}
+    .goog-te-gadget select{font-size:12px!important;background:#181823;color:#f3f3fa;border:1px solid #3f4264;border-radius:7px;padding:3px 8px;cursor:pointer}
+    .goog-te-logo-link,.goog-te-gadget span{display:none!important}
   </style>
 </head>
 <body>
   <header>
+    <div id="google_translate_element" style="float:right;padding:1rem 1.5rem 0 0"></div>
     <h1>PromptForge <span style="color:#f7caf6;">GOD MODE</span></h1>
     <h2>The Ultimate AI Prompt Generator<br>
       <span style="font-size:.98rem; color:#b0c8f7;">Image, Movie, NSFW, Meme, Story, Art, More</span>
@@ -160,5 +165,7 @@
       }
     });
   </script>
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <script>function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:'en',includedLanguages:'ko,ja,zh-CN,es,fr,de,pt'},'google_translate_element')}</script>
 </body>
 </html>
