@@ -32,9 +32,6 @@
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://promptforge.online/"},{"@type":"ListItem","position":2,"name":"Prompt Builder","item":"https://promptforge.online/builder"}]}
   </script>
 
-  <!-- ===== Ads: JuicyAds (single async include; zones pushed later) ===== -->
-  <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 
@@ -119,14 +116,6 @@
     .footer-bar{color:#88fffd;margin:12px auto 8px;font-size:1.04em;text-align:center;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
     .footer-bar a{color:var(--aqua)} .footer-bar a:hover{text-decoration:underline;color:#fff}
 
-    /* ===== Ad wrappers: CLS‑safe ===== */
-    .ad-wrap{display:flex;align-items:center;justify-content:center;margin:10px auto}
-    .ad-728x90{width:728px;min-height:90px}
-    .ad-300x250{width:300px;min-height:250px}
-    .ad-160x600{width:160px;min-height:600px}
-    @media(max-width:760px){.ad-728x90{transform:scale(.92);transform-origin:center}}
-    .rail{position:fixed;right:10px;bottom:100px;z-index:1200;display:none}
-    @media(min-width:1320px){.rail{display:block}}
     .main-with-bottom-pad{padding-bottom:120px}
   </style>
 </head>
@@ -154,8 +143,6 @@
         <a href="https://promptforge.online/support" class="bmc-btn" aria-label="Support PromptForge">💖 Support</a>
       </div>
     </div>
-    <!-- Header Ad 728x90 (JuicyAds 1101674) -->
-    <div class="ad-wrap"><ins id="1101674" class="ad-728x90" data-width="728" data-height="90"></ins></div>
   </div>
 
   <!-- ===== HERO ===== -->
@@ -178,9 +165,6 @@
       </div>
     </section>
   </div>
-
-  <!-- ===== Mid Ad (300x250 JuicyAds 1101622) ===== -->
-  <section class="ad-wrap"><ins id="1101622" class="ad-300x250" data-width="300" data-height="250"></ins></section>
 
   <!-- ===== TOOL ===== -->
   <section class="tool" id="tool">
@@ -328,12 +312,6 @@
     </div>
   </section>
 
-  <!-- Right rail (widescreen only) - JuicyAds 160x600 (1101675) -->
-  <aside class="rail" aria-label="sponsored sidebar"><ins id="1101675" class="ad-160x600" data-width="160" data-height="600"></ins></aside>
-
-  <!-- Bottom Ad 728x90 (reuse header zone 1101674) -->
-  <div class="ad-wrap"><ins id="1101674_bottom" class="ad-728x90" data-width="728" data-height="90"></ins></div>
-
   <!-- ===== J1NX (kept) ===== -->
   <div class="j1nx-float-true" id="j1nxFloatTrue">
     <img src="j1nx/j1nx_cutout.png" alt="J1nx" class="j1nx-true-cutout-img" id="j1nxCutoutTrue"/>
@@ -385,13 +363,6 @@
     // J1NX minimal integration (consistent with site-wide brain)
     (function(){ const chat=["Let’s make this copy sharp and yours. What are you building?"]; function render(){ document.getElementById("j1nxBubbleTextTrue").innerHTML="<b>J1nx:</b> "+chat[chat.length-1]; } const input=document.getElementById("j1nxInputTrue"); document.getElementById("j1nxSendTrue").onclick=function(){ const val=(input.value||"").trim(); if(!val) return; let reply="(Brain not loaded)"; try{ if(window.j1nxBrain){ const r=window.j1nxBrain(val, chat.length); reply=typeof r==="object"?(r.reply||r.text||JSON.stringify(r)):r; } }catch(_){ } chat.push(val); chat.push(reply||"Try rephrasing—I’ll keep it punchy."); render(); input.value=""; }; input.addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("j1nxSendTrue").click(); }); document.getElementById("j1nxClearTrue").onclick=function(){ chat.splice(1); render(); }; document.getElementById("j1nxSaveTrue").onclick=function(){ try{ const blob=new Blob([chat.join("\n")],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="j1nx_chat.txt"; a.click(); }catch(_){ alert("Couldn’t save right now."); } }; render(); })();
 
-    // ===== JuicyAds pushes (render zones) =====
-    try{
-      (adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101674}); // header 728x90
-      (adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101622}); // mid 300x250
-      (adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101675}); // right rail 160x600
-      (adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101674}); // bottom reuse 728x90
-    }catch(e){}
   </script>
 </body>
 </html>

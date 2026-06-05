@@ -33,9 +33,6 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700&display=swap" rel="stylesheet" />
 
-  <!-- JuicyAds (single async include; zones pushed later) -->
-  <script async data-cfasync="false" src="https://poweredby.jads.co/js/jads.js"></script>
-
   <!-- J1NX brain (responses) -->
   <script defer src="assets/j1nx_brain.js"></script>
 
@@ -75,15 +72,6 @@
     .howto-links{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:13px auto 14px;max-width:980px}
     .howto-link{background:#232922;color:var(--aqua);border:1.6px solid #49fffb;border-radius:9px;padding:7px 19px;font-weight:800;box-shadow:0 2px 8px #19e4ff33}
     .howto-link:hover{background:#191d19;color:#fff;border-color:var(--gold)}
-
-    /* Ads — CLS‑safe wrappers */
-    .ad-wrap{display:flex;align-items:center;justify-content:center;margin:10px auto}
-    .ad-728x90{width:728px;min-height:90px}
-    .ad-300x250{width:300px;min-height:250px}
-    .ad-160x600{width:160px;min-height:600px}
-    @media(max-width:760px){.ad-728x90{transform:scale(.92);transform-origin:center}}
-    .rail{position:fixed;right:10px;bottom:100px;z-index:1200;display:none}
-    @media(min-width:1320px){.rail{display:block}}
 
     /* Category buttons */
     .category-row{display:flex;flex-wrap:wrap;justify-content:center;gap:13px 17px;margin:17px auto 18px;max-width:1200px}
@@ -151,8 +139,6 @@
         <a href="support.html">Support</a>
       </nav>
     </div>
-    <!-- Header Ad 728x90 -->
-    <div class="ad-wrap"><ins id="1101674" class="ad-728x90" data-width="728" data-height="90"></ins></div>
   </header>
 
   <!-- SEO ribbon -->
@@ -179,12 +165,6 @@
     <a class="howto-link" href="legal.html">Legal / Terms</a>
     <a class="howto-link" href="support.html">Support</a>
   </section>
-
-  <!-- Right rail (widescreen) -->
-  <aside class="rail" aria-label="sponsored sidebar"><ins id="1101675" class="ad-160x600" data-width="160" data-height="600"></ins></aside>
-
-  <!-- Mid ad (300x250) -->
-  <section class="ad-wrap"><ins id="1101622" class="ad-300x250" data-width="300" data-height="250"></ins></section>
 
   <!-- Category buttons (no section open by default) -->
   <div class="category-row" id="category-row">
@@ -236,9 +216,6 @@
     <!-- Empty state helper -->
     <section id="empty-msg" class="accordion-block active"><div class="accordion-title">Pick a category to load pranks</div><div class="prank-grid"></div></section>
   </main>
-
-  <!-- Bottom Ad 728x90 (reuse zone) -->
-  <div class="ad-wrap"><ins id="1101674_bottom" class="ad-728x90" data-width="728" data-height="90"></ins></div>
 
   <!-- J1NX FLOAT (as-is; only glow added) -->
   <div class="j1nx-float-true" id="j1nxFloatTrue" aria-label="J1nx chat">
@@ -336,8 +313,6 @@
       .then(all=>{ const buckets={}; (all||[]).forEach(p=>{ const cat=(p.category||'misc').toLowerCase(); (buckets[cat]||(buckets[cat]=[])).push(p); }); state.data=buckets; for(const [cat,arr] of Object.entries(state.data)){ const b=document.getElementById('c-'+cat); if(b) b.textContent=arr.length; } /* no auto-open */ })
       .catch(()=>{ toast('Could not load pranks data (assets/aihacks-data.json). Check path.'); });
 
-    // Ads: zone pushes (header, mid, rail, bottom)
-    try{ (adsbyjuicy=window.adsbyjuicy||[]).push({'adzone':1101674}); (adsbyjuicy=window.adsbyjuicy||[]).push({'adzone':1101622}); (adsbyjuicy=window.adsbyjuicy||[]).push({'adzone':1101675}); (adsbyjuicy=window.adsbyjuicy||[]).push({'adzone':1101674}); }catch(e){}
   </script>
 
   <!-- Age Gate (for NSFW/Adults) -->

@@ -132,12 +132,6 @@
     .footer-art{font-family:Fira Mono,monospace;font-size:.91em;line-height:1.01;letter-spacing:1.1px;color:#64f2e3;white-space:pre;user-select:none;margin:0 0 8px 0}
     .footer-camo{font-family:Fira Mono,monospace;font-size:.85em;letter-spacing:2px;color:#64f2e3;min-height:.8em}
 
-    /* Ad wrappers: CLS-safe */
-    .ad-wrap{display:flex;align-items:center;justify-content:center;margin:10px auto}
-    .ad-728x90{width:728px;min-height:90px}
-    .ad-300x250{width:300px;min-height:250px}
-    .ad-160x600{width:160px;min-height:600px}
-
     /* Responsive */
     @media (max-width:1100px){ .grid{grid-template-columns:repeat(2,minmax(260px,1fr))} }
     @media (max-width:700px){ .grid{grid-template-columns:1fr} }
@@ -161,12 +155,6 @@
         <a class="pill" href="https://x.com/GoreandGiggles" target="_blank" rel="noopener">Twitter/X</a>
         <a class="pill" href="support.html">Support</a>
       </nav>
-    </div>
-    <!-- Header AD (728x90) — canonical per-zone snippet for reliability -->
-    <div class="ad-wrap ad-728x90">
-      <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-      <ins id="1101674" data-width="728" data-height="90" style="display:inline-block;width:728px;height:90px"></ins>
-      <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101674});</script>
     </div>
   </header>
 
@@ -278,28 +266,6 @@
           </a>
         </section>
 
-        <!-- MID AD (300x250) — canonical snippet -->
-        <section class="ad-wrap ad-300x250">
-          <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-          <ins id="1101622" data-width="300" data-height="250" style="display:inline-block;width:300px;height:250px"></ins>
-          <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101622});</script>
-        </section>
-
-        <!-- “Why ads?” — hidden to users (collapsed), visible to bots (content exists in DOM) -->
-        <section class="card" style="margin-top:14px;max-width:1100px">
-          <details>
-            <summary style="cursor:pointer;font-weight:800">About the ads (tap to expand)</summary>
-            <div style="margin-top:8px">
-              <p><strong>Why ads?</strong> PromptForge is a free, creator‑first project. Ads help cover hosting, bandwidth, and time spent maintaining the tools. We keep ad slots light and out of your way, and we do not sell personal data.</p>
-              <p><strong>Brand‑safe split:</strong> any experimental or 18+ labs live on isolated routes with an interstitial and no mixed ad inventory. The homepage and core tools remain general‑audience.</p>
-              <p><strong>Privacy:</strong> we log minimal analytics for reliability and abuse prevention. See <a href="legal.html">Legal</a> for details.</p>
-            </div>
-          </details>
-          <noscript>
-            <p><strong>About the ads:</strong> Ads fund hosting and feature work so the studio stays free. We keep things brand‑safe here and isolate any adult labs separately. Minimal analytics; see Legal.</p>
-          </noscript>
-        </section>
-
         <!-- About / Privacy / Terms (kept, concise) -->
         <section id="about" class="card" style="margin-top:14px;max-width:1100px">
           <h2>About</h2>
@@ -322,21 +288,6 @@
       </main>
     </div>
 
-    <!-- right sidebar (160x600) -->
-    <aside class="sidebar" aria-label="sponsored sidebar">
-      <div class="ad-wrap ad-160x600">
-        <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-        <ins id="1101675" data-width="160" data-height="600" style="display:inline-block;width:160px;height:600px"></ins>
-        <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101675});</script>
-      </div>
-    </aside>
-  </div>
-
-  <!-- BOTTOM AD (728x90 reuse header zone) -->
-  <div class="ad-wrap ad-728x90">
-    <script type="text/javascript" data-cfasync="false" async src="https://poweredby.jads.co/js/jads.js"></script>
-    <ins id="1101674" data-width="728" data-height="90" style="display:inline-block;width:728px;height:90px"></ins>
-    <script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1101674});</script>
   </div>
 
   <!-- J1NX (from your canonical demo/footer) -->

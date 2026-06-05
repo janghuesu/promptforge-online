@@ -23,9 +23,6 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Fira+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 
-  <!-- AdSense (load once) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4963053724895140" crossorigin="anonymous"></script>
-
   <!-- ====== BASE STYLES (keep original vibe; add only what’s needed) ====== -->
   <style>
     :root{
@@ -68,11 +65,6 @@
     .pf-breadcrumbs ol{list-style:none;margin:0;padding:0;display:flex;gap:6px;align-items:center}
     .pf-breadcrumbs a{color:#55fff7;border-bottom:1.4px solid #3efcff22}
     .pf-breadcrumbs a:hover{color:var(--hot);border-bottom-color:var(--hot)}
-
-    /* Ads */
-    .ad-wrap{max-width:1120px;margin:8px auto 4px;display:flex;justify-content:center}
-    .adsbygoogle{display:block}
-    .ad-mid{margin:18px auto}
 
     /* Layout */
     .layout{display:flex;align-items:flex-start}
@@ -129,7 +121,7 @@
     .footer-bar a:hover{color:#fff;text-decoration:underline}
 
     /* Responsive */
-    @media (max-width:1120px){ main#tools{padding:18px 14px 90px} .ad-wrap{margin:4px 8px} }
+    @media (max-width:1120px){ main#tools{padding:18px 14px 90px} }
     @media (max-width:900px){ .layout{display:block} .hud-sidebar{display:none} .pf-nav ul{flex-direction:column;align-items:center} }
   </style>
 </head>
@@ -189,11 +181,6 @@
       </ol>
     </nav>
 
-    <!-- Above-the-fold Ad -->
-    <div class="ad-wrap">
-      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-4963053724895140" data-ad-slot="7612340012" data-ad-format="auto" data-full-width-responsive="true"></ins>
-    </div>
-    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </header>
 
   <!-- ALWAYS-ON BACKDROPS (unchanged) -->
@@ -276,12 +263,6 @@
         <video id="hiddenVideo" style="display:none"></video>
         <canvas id="hiddenVidCanvas" style="display:none"></canvas>
       </section>
-
-      <!-- Mid-page Ad -->
-      <div class="ad-wrap ad-mid">
-        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-4963053724895140" data-ad-slot="7612340023" data-ad-format="auto" data-full-width-responsive="true"></ins>
-      </div>
-      <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
 
       <!-- ───────── NEW: WEBCAM → ASCII ───────── -->
       <section id="tool-webcam" class="hud-panel">
